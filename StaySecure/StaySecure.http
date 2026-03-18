@@ -1,0 +1,6 @@
+@StaySecure_HostAddress = http://localhost:5150
+
+GET {{StaySecure_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
