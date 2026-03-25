@@ -21,11 +21,27 @@ namespace StaySecure.DAL.Utls
         {
             if (!await _userManager.Users.AnyAsync())
             {
+                var translations = new List<ApplicationUserTranslations>
+                {
+                   new ApplicationUserTranslations
+                    {
+                      FullName = "تقى",
+                      City = "الخليل",
+                      Language = "ar"
+                    },
+                    new ApplicationUserTranslations
+                    {
+                      FullName = "Tuqa",
+                      City = "Hebron",
+                      Language = "en"
+                    }
+                 };
                 var user1 = new ApplicationUser
                 {
                     UserName = "Tuqa",
                     Email = "abusharktuqa@gmail.com",
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    Translations = translations
                 };
 
                 await _userManager.CreateAsync(user1, "Pass@2005");

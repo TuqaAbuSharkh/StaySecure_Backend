@@ -18,9 +18,9 @@ namespace StaySecure.PL.Areas.Admin
             _ManageUserService = ManageUserService;
         }
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers([FromQuery]string lang)
         {
-            var result = await _ManageUserService.GetUsersAsync();
+            var result = await _ManageUserService.GetUsersAsync(lang);
             return Ok(result);
         }
         [HttpGet("userDetails/{userId}")]

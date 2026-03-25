@@ -12,8 +12,8 @@ using StaySecure.DAL.Data;
 namespace StaySecure.DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260318185646_initial")]
-    partial class initial
+    [Migration("20260325132830_updateuserTransla")]
+    partial class updateuserTransla
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

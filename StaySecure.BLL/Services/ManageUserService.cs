@@ -21,21 +21,31 @@ namespace StaySecure.BLL.Services
         {
             _userManager = userManager;
         }
-        public async Task<List<UserListResponse>> GetUsersAsync()
+        public async Task<List<UserListResponse>> GetUsersAsync(string lang="en")
         {
-            var users = await _userManager.Users.ToListAsync();
-            var result = users.Adapt<List<UserListResponse>>();
+            var users = await _userManager.Users
+             .Include(u => u.Translations)
+             .ToListAsync();
+
+            var result = users
+                .BuildAdapter()
+                .AddParameters("lang", lang)
+                .AdaptToType<List<UserListResponse>>();
+
             for (int i = 0; i < users.Count; i++)
             {
                 var roles = await _userManager.GetRolesAsync(users[i]);
                 result[i].Roles = roles.ToList();
             }
+
             return result;
         }
 
         public async Task<UserDetailsResponse> GetUserDetailsAsync(string Id)
         {
-            var user = await _userManager.FindByIdAsync(Id);
+            var user = await _userManager.Users
+              .Include(u => u.Translations)
+              .FirstOrDefaultAsync(u => u.Id == Id);
             var result = user.Adapt<UserDetailsResponse>();
             var roles = await _userManager.GetRolesAsync(user);
             result.Roles = roles.ToList();
