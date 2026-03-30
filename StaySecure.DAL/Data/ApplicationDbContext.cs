@@ -36,29 +36,6 @@ namespace StaySecure.DAL.Data
             builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
             builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
 
-            //builder.Entity<Category>()
-            //    .HasOne(c => c.User)
-            //    .WithMany()
-            //    .HasForeignKey(c => c.CreatedBy)
-            //    .OnDelete(DeleteBehavior.NoAction);
-
-            //builder.Entity<Cart>()
-            //   .HasOne(c => c.User)
-            //   .WithMany()
-            //   .HasForeignKey(c => c.userId)
-            //   .OnDelete(DeleteBehavior.NoAction);
-
-            //builder.Entity<Product>()
-            //   .HasOne(c => c.User)
-            //   .WithMany()
-            //   .HasForeignKey(c => c.CreatedBy)
-            //   .OnDelete(DeleteBehavior.NoAction);
-
-            //builder.Entity<Order>()
-            //   .HasOne(c => c.User)
-            //   .WithMany()
-            //   .HasForeignKey(c => c.UserId)
-            //   .OnDelete(DeleteBehavior.NoAction);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

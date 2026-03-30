@@ -13,8 +13,8 @@ namespace StaySecure.DAL.Models
         public string FullName { get; set; }
         public string? City { get; set; }
         public string Language { get; set; } = "en";
-        public string ApplicationUserId { get; set; }
-        public ApplicationUser ApplicationUser { get; set; }
+        public string? ApplicationUserId { get; set; }
+        public ApplicationUser? ApplicationUser { get; set; }
 
     }
 }

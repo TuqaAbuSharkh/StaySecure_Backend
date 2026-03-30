@@ -13,6 +13,13 @@ namespace StaySecure.DAL.Models
         Female = 2
     }
 
+    public enum LevelEnum
+    {
+        Beginner=0,
+        Intermediate=1,
+        Advanced=2
+    }
+
 
     public class ApplicationUser :IdentityUser
     {
@@ -23,6 +30,7 @@ namespace StaySecure.DAL.Models
 
         public GenderEnum? Gender { get; set; } = (GenderEnum?)1;
 
+        public LevelEnum Level { get; set; } = 0;
 
         public string? CodeResetPassword { get; set; }
         public DateTime? PasswordResetCodeExpiry { get; set; }

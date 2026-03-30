@@ -8,7 +8,6 @@ namespace StaySecure.PL.Areas.Admin
 {
     [Route("api/admin/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class ManagesController : ControllerBase
     {
         private readonly IManageUserService _ManageUserService;
@@ -17,18 +16,22 @@ namespace StaySecure.PL.Areas.Admin
         {
             _ManageUserService = ManageUserService;
         }
-        [HttpGet("users")]
-        public async Task<IActionResult> GetUsers()
-        {
-            var result = await _ManageUserService.GetUsersAsync();
-            return Ok(result);
-        }
+        [Authorize]
         [HttpGet("userDetails/{userId}")]
         public async Task<IActionResult> GetUserDetails([FromRoute] string userId)
         {
             var result = await _ManageUserService.GetUserDetailsAsync(userId);
             return Ok(result);
         }
+        [Authorize(Roles = "Admin")]
+
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers()
+        {
+            var result = await _ManageUserService.GetUsersAsync();
+            return Ok(result);
+        }
+       
 
         [HttpPatch("block/{userId}")]
         public async Task<IActionResult> BlockUser([FromRoute] string userId)

@@ -111,6 +111,8 @@ namespace StaySecure.BLL.Services
             try
             {
                 var user = request.Adapt<ApplicationUser>();
+                user.UserName = user.Translations.FirstOrDefault(t => t.Language == "en").FullName;
+
 
                 var result = await _userManager.CreateAsync(user, request.Password);
                 if (!result.Succeeded)
@@ -123,7 +125,6 @@ namespace StaySecure.BLL.Services
                     };
                 }
                 await _userManager.AddToRoleAsync(user, "Student");
-                user.UserName = user.Translations.FirstOrDefault(t => t.Language == "en").FullName;
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                 token = Uri.EscapeDataString(token);
                var emailUrl = $"https://localhost:7254/api/auth/Account/ConfirmEmail?token={token}&userId={user.Id}";

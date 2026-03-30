@@ -31,6 +31,29 @@ namespace StaySecure.DAL.Utls
                 await _userManager.CreateAsync(user1, "Pass@2005");
 
                 await _userManager.AddToRoleAsync(user1, "Admin");
+
+                var user2 = new ApplicationUser
+                {
+                    UserName = "Rand",
+                    Email = "randhaymouni@gmail.com",
+                    EmailConfirmed = true
+                };
+
+                await _userManager.CreateAsync(user2, "Rand@123");
+
+                await _userManager.AddToRoleAsync(user2, "Admin");
+
+
+                var user3 = new ApplicationUser
+                {
+                    UserName = "Majd",
+                    Email = "majd2004tamimi@gmail.com",
+                    EmailConfirmed = true
+                };
+
+                await _userManager.CreateAsync(user3, "Majd@2004");
+
+                await _userManager.AddToRoleAsync(user3, "Admin");
             }
         }
 
