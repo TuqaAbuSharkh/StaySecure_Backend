@@ -9,9 +9,10 @@ namespace StaySecure.DAL.DTOs.Request
 {
     public class RegisterRequest
     {
-        public List<ApplicationUserTranslations> Translations { get; set; }
 
         public string Email { get; set; }
+        public List<ApplicationUserTranslations> Translations { get; set; }
+
         public string Password { get; set; }
         public int Age { get; set; }
         public GenderEnum Gender { get; set; }
@@ -19,3 +20,4 @@ namespace StaySecure.DAL.DTOs.Request
 
     }
 }
+    

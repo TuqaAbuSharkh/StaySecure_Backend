@@ -113,7 +113,6 @@ namespace StaySecure.BLL.Services
                 var user = request.Adapt<ApplicationUser>();
                 user.UserName = user.Translations.FirstOrDefault(t => t.Language == "en").FullName;
 
-
                 var result = await _userManager.CreateAsync(user, request.Password);
                 if (!result.Succeeded)
                 {
