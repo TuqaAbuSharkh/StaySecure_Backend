@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using StaySecure.BLL.Services.IServices;
 using StaySecure.DAL.DTOs.Request;
+using StaySecure.PL.Resources;
 
 namespace StaySecure.PL.Areas.Admin
 {
@@ -11,25 +14,35 @@ namespace StaySecure.PL.Areas.Admin
     public class ManagesController : ControllerBase
     {
         private readonly IManageUserService _ManageUserService;
+        private readonly IStringLocalizer<SharedResource> _localizer;
 
-        public ManagesController(IManageUserService ManageUserService)
+
+        public ManagesController(IManageUserService ManageUserService, IStringLocalizer<SharedResource> Localizer)
         {
             _ManageUserService = ManageUserService;
+            _localizer = Localizer;
         }
+        //Leaderboard
+        //public async Task<IActionResult> GetUsers([FromQuery] string lang="en")
+        //{
+        //    var result = await _ManageUserService.GetUsersAsync(lang);
+        //    return Ok(new { message = _localizer["Success"].Value, result });
+        //}
+
         [Authorize]
         [HttpGet("userDetails/{userId}")]
-        public async Task<IActionResult> GetUserDetails([FromRoute] string userId)
+        public async Task<IActionResult> GetUserDetails([FromRoute] string userId )
         {
             var result = await _ManageUserService.GetUserDetailsAsync(userId);
-            return Ok(result);
+            return Ok(new { message = _localizer["Success"].Value, result });
         }
         [Authorize(Roles = "Admin")]
 
         [HttpGet("users")]
-        public async Task<IActionResult> GetUsers([FromQuery]string lang)
+        public async Task<IActionResult> GetAllUsers()
         {
-            var result = await _ManageUserService.GetUsersAsync(lang);
-            return Ok(result);
+            var result = await _ManageUserService.GetUsersAsync();
+            return Ok(new { message = _localizer["Success"].Value, result });
         }
        
 

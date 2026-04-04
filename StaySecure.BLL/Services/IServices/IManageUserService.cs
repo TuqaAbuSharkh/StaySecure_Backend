@@ -10,7 +10,7 @@ namespace StaySecure.BLL.Services.IServices
 {
     public interface IManageUserService
     {
-        Task<List<UserListResponse>> GetUsersAsync(string lang="en");
+        Task<List<UserListResponse>> GetUsersAsync();
         Task<UserDetailsResponse> GetUserDetailsAsync(string Id);
         Task<BaseRespose> BlockedUserAsync(string userId);
         Task<BaseRespose> UnBlockedUserAsync(string userId);

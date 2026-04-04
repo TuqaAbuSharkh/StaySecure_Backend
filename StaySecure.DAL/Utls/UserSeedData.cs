@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using StaySecure.DAL.Models;
 using System;
 using System.Collections.Generic;
@@ -12,39 +13,29 @@ namespace StaySecure.DAL.Utls
     public class UserSeedData : ISeedData
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IConfiguration _configuration;
 
-        public UserSeedData(UserManager<ApplicationUser> roleManager)
+        public UserSeedData(UserManager<ApplicationUser> roleManager,IConfiguration configuration)
         {
             _userManager = roleManager;
+            _configuration = configuration;
         }
         public async Task DataSeed()
         {
             if (!await _userManager.Users.AnyAsync())
             {
-                var translations = new List<ApplicationUserTranslations>
-                {
-                   new ApplicationUserTranslations
-                    {
-                      FullName = "تقى",
-                      City = "الخليل",
-                      Language = "ar"
-                    },
-                    new ApplicationUserTranslations
-                    {
-                      FullName = "Tuqa",
-                      City = "Hebron",
-                      Language = "en"
-                    }
-                 };
+              
                 var user1 = new ApplicationUser
                 {
                     UserName = "Tuqa",
+                    FullName = "Tuqa Abu Sharkh",
+                    City = "Hebron",
                     Email = "abusharktuqa@gmail.com",
                     EmailConfirmed = true,
-                    Translations = translations
+                    Gender= GenderEnum.Female
                 };
 
-                await _userManager.CreateAsync(user1, "Pass@2005");
+                await _userManager.CreateAsync(user1, _configuration["SeedUsers:User1"]!);
 
                 await _userManager.AddToRoleAsync(user1, "Admin");
 
@@ -52,10 +43,13 @@ namespace StaySecure.DAL.Utls
                 {
                     UserName = "Rand",
                     Email = "randhaymouni@gmail.com",
-                    EmailConfirmed = true
+                    FullName = "Rand Haymouni",
+                    City = "Hebron",
+                    EmailConfirmed = true,
+                    Gender = GenderEnum.Female
                 };
 
-                await _userManager.CreateAsync(user2, "Rand@123");
+                await _userManager.CreateAsync(user2, _configuration["SeedUsers:User2"]!);
 
                 await _userManager.AddToRoleAsync(user2, "Admin");
 
@@ -63,11 +57,14 @@ namespace StaySecure.DAL.Utls
                 var user3 = new ApplicationUser
                 {
                     UserName = "Majd",
+                    FullName = "Majd Tamimi",
+                    City = "Hebron",
                     Email = "majd2004tamimi@gmail.com",
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    Gender = GenderEnum.Female
                 };
 
-                await _userManager.CreateAsync(user3, "Majd@2004");
+                await _userManager.CreateAsync(user3, _configuration["SeedUsers:User3"]!);
 
                 await _userManager.AddToRoleAsync(user3, "Admin");
             }

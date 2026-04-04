@@ -41,14 +41,46 @@ namespace StaySecure.PL.Areas.Identity
 
         }
 
-        [HttpGet("ConfirmEmail")]
+        [HttpGet("ConfirmEmail")] 
         public async Task<IActionResult> ConfirmEmail(string token, string userId)
         {
             var result = await _authenticationService.ConfirmEmailAsync(token, userId);
 
-            return Ok(result);
+            if (!result)
+                return BadRequest("Invalid or expired token");
 
+            return Ok("Email confirmed successfully");
         }
+
+        [HttpPost("Verify2FA")]
+        public async Task<IActionResult> Verify2FA([FromBody] TwoFactorRequest request)
+        {
+            var result = await _authenticationService.VerifyTwoFactorAsync(request.UserId, request.Code);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPost("Enable2FA")]
+        public async Task<IActionResult> Enable2FA([FromQuery] string userId)
+        {
+            var result = await _authenticationService.Enable2FAAsync(userId);
+            return Ok(result);
+        }
+
+        [HttpPost("Confirm2FA")]
+        public async Task<IActionResult> Confirm2FA([FromBody] TwoFactorRequest request)
+        {
+            var result = await _authenticationService.Confirm2FAAsync(request.UserId, request.Code);
+
+            if (result != "2FA Enabled Successfully")
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
         [HttpPost("SendCode")]
         public async Task<IActionResult> RequestPassworsReset(ForgetPasswordRequest request)
         {

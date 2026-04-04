@@ -1,17 +1,20 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using StaySecure.BLL.Services.IServices;
+using StaySecure.DAL.Data;
 using StaySecure.DAL.DTOs.Request;
 using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.Models;
-using Mapster;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace StaySecure.BLL.Services
 {
@@ -22,96 +25,194 @@ namespace StaySecure.BLL.Services
         private readonly IEmailSender _emailSender;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ITokenService _tokenService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ApplicationDbContext _context;
 
         public AuthenticationService(UserManager<ApplicationUser> userManager, IConfiguration configuration,
-            IEmailSender emailSender, SignInManager<ApplicationUser> signInManager, ITokenService tokenService)
+            IEmailSender emailSender, SignInManager<ApplicationUser> signInManager, ITokenService tokenService,
+            IHttpContextAccessor httpContextAccessor, ApplicationDbContext context)
         {
             _userManager = userManager;
             _configuration = configuration;
             _emailSender = emailSender;
             _signInManager = signInManager;
             _tokenService = tokenService;
+            _httpContextAccessor = httpContextAccessor;
+            _context = context;
         }
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
         {
             try
             {
+                var ipAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
                 var user = await _userManager.FindByEmailAsync(request.Email);
-                if (user is null)
+
+                if (user == null)
                 {
-                    return new LoginResponse()
-                    {
-                        Success = false,
-                        Message = "Invalid Email!",
-                    };
+                    await LogLoginAttempt(null, request.Email, false, ipAddress, "Invalid Email");
+                    return new LoginResponse { Success = false, Message = "Invalid Email!" };
                 }
 
                 if (await _userManager.IsLockedOutAsync(user))
                 {
-                    return new LoginResponse()
-                    {
-                        Success = false,
-                        Message = "Accoun is locked! try again later",
-                    };
+                    await LogLoginAttempt(user.Id, user.Email, false, ipAddress, "Account Locked");
+                    return new LoginResponse { Success = false, Message = "Account is locked!" };
                 }
+
                 var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
-                if (result.IsLockedOut)
+
+                if (!result.Succeeded)
                 {
-                    return new LoginResponse()
+                    await LogLoginAttempt(user.Id, user.Email, false, ipAddress, "Invalid Password");
+                    return new LoginResponse
                     {
                         Success = false,
-                        Message = "Accoun is locked! try again later",
-                    };
-                }
-                else if (result.IsNotAllowed)
-                {
-                    return new LoginResponse()
-                    {
-                        Success = false,
-                        Message = "please confirm your email",
-                    };
-                }
-                else if (!result.Succeeded)
-                {
-                    return new LoginResponse()
-                    {
-                        Success = false,
-                        Message = "invalid password",
+                        Message = "Invalid credentials"
                     };
                 }
 
-                var accessToken = await _tokenService.GenerateAccessToken(user);
-                var refreshToken = _tokenService.GenerateRefreshToken();
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
-                await _userManager.UpdateAsync(user);
-
-                return new LoginResponse()
+                // 🔥 هون المهم: إذا في 2FA
+                if (user.TwoFactorEnabled)
                 {
-                    Success = true,
-                    Message = "Login Successfully",
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken
-                };
+                    return new LoginResponse
+                    {
+                        Success = true,
+                        RequiresTwoFactor = true,
+                        Message = "2FA required",
+                        UserId = user.Id
+                    };
+                }
 
+                // تسجيل دخول عادي بدون 2FA
+                return await GenerateTokens(user, ipAddress);
             }
             catch (Exception ex)
             {
-                return new LoginResponse()
+                return new LoginResponse
                 {
                     Success = false,
-                    Message = "An Exception Error!",
+                    Message = "Exception Error!",
                     Errors = new List<string> { ex.Message }
                 };
             }
         }
 
+        // دالة مساعدة لتسجيل الـ login
+        private async Task LogLoginAttempt(string userId, string email, bool success, string ipAddress, string failureReason = null)
+        {
+            _context.LoginLogs.Add(new LoginLog
+            {
+                UserId = userId,
+                Email = email,
+                AttemptTime = DateTime.UtcNow,
+                Success = success,
+                IpAddress = ipAddress,
+                FailureReason = failureReason
+            });
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<LoginResponse> VerifyTwoFactorAsync(string userId, string code)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+            if (user == null)
+            {
+                return new LoginResponse { Success = false, Message = "User not found" };
+            }
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(
+                user,
+                _userManager.Options.Tokens.AuthenticatorTokenProvider,
+                code
+            );
+
+            if (!isValid)
+            {
+                await LogLoginAttempt(user.Id, user.Email, false, ipAddress, "Invalid 2FA Code");
+
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Invalid 2FA code"
+                };
+            }
+
+            return await GenerateTokens(user, ipAddress);
+        }
+
+        public async Task<object> Enable2FAAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                throw new Exception("User not found");
+
+            var key = await _userManager.GetAuthenticatorKeyAsync(user);
+
+            if (string.IsNullOrEmpty(key))
+            {
+                await _userManager.ResetAuthenticatorKeyAsync(user);
+                key = await _userManager.GetAuthenticatorKeyAsync(user);
+            }
+
+            var qrCodeUri = $"otpauth://totp/StaySecure:{user.Email}?secret={key}&issuer=StaySecure&digits=6";
+
+            return new
+            {
+                sharedKey = key,
+                qrCodeUri = qrCodeUri
+            };
+        }
+
+        public async Task<string> Confirm2FAAsync(string userId, string code)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                return "User not found";
+
+            var isValid = await _userManager.VerifyTwoFactorTokenAsync(
+                user,
+                _userManager.Options.Tokens.AuthenticatorTokenProvider,
+                code
+            );
+
+            if (!isValid)
+                return "Invalid Code";
+
+            await _userManager.SetTwoFactorEnabledAsync(user, true);
+
+            return "2FA Enabled Successfully";
+        }
+
+
+        private async Task<LoginResponse> GenerateTokens(ApplicationUser user, string ipAddress)
+        {
+            var accessToken = await _tokenService.GenerateAccessToken(user);
+            var refreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            await LogLoginAttempt(user.Id, user.Email, true, ipAddress, null);
+
+            return new LoginResponse
+            {
+                Success = true,
+                Message = "Login Successfully",
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            };
+        }
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
             try
             {
                 var user = request.Adapt<ApplicationUser>();
-                user.UserName = user.Translations.FirstOrDefault(t => t.Language == "en").FullName;
 
                 var result = await _userManager.CreateAsync(user, request.Password);
                 if (!result.Succeeded)
@@ -125,11 +226,18 @@ namespace StaySecure.BLL.Services
                 }
                 await _userManager.AddToRoleAsync(user, "Student");
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                token = Uri.EscapeDataString(token);
-               var emailUrl = $"https://localhost:7254/api/auth/Account/ConfirmEmail?token={token}&userId={user.Id}";
-              await _emailSender.SendEmailAsync(user.Email, "Welcome To StaySecure", $"<h1>Welcome {user.UserName}</h1>" +" \n Please Confirm Your Email"+
-                    $"<a href='{emailUrl}'> Confirm Email </a>");
 
+                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+
+                var emailUrl = $"https://staysecure.runasp.net/api/auth/ConfirmEmail?token={encodedToken}&userId={user.Id}";
+
+                await _emailSender.SendEmailAsync(
+                    user.Email,
+                    "Welcome To StaySecure",
+                    $"<h1>Welcome {user.UserName}</h1>" +
+                    "<br/> Please Confirm Your Email<br/>" +
+                    $"<a href='{emailUrl}'>Confirm Email</a>"
+                );
                 return new RegisterResponse()
                 {
                     Success = true,
@@ -153,10 +261,12 @@ namespace StaySecure.BLL.Services
             var user = await _userManager.FindByIdAsync(userId);
             if (user is null)
                 return false;
-            var result = await _userManager.ConfirmEmailAsync(user, token);
-            if (!result.Succeeded)
-                return false;
-            return true;
+
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+
+            var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+
+            return result.Succeeded;
         }
 
         public async Task<ForgetPasswordResponse> RequestPassworsReset(ForgetPasswordRequest request)

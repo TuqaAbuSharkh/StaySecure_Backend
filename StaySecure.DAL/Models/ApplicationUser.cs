@@ -24,9 +24,11 @@ namespace StaySecure.DAL.Models
     public class ApplicationUser :IdentityUser
     {
 
-       public List<ApplicationUserTranslations> Translations { get; set; }
         public int? Age { get; set; }
         public int TotalScore { get; set; } = 0;
+
+        public string FullName { get; set; }
+        public string City { get; set; }
 
         public GenderEnum? Gender { get; set; } = (GenderEnum?)1;
 

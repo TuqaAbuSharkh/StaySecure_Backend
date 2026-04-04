@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StaySecure.DAL.Data;
 
@@ -11,9 +12,11 @@ using StaySecure.DAL.Data;
 namespace StaySecure.DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260403104844_updateAdmins")]
+    partial class updateAdmins
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,10 +169,6 @@ namespace StaySecure.DAL.Migrations
                     b.Property<int?>("Age")
                         .HasColumnType("int");
 
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("CodeResetPassword")
                         .HasColumnType("nvarchar(max)");
 
@@ -183,10 +182,6 @@ namespace StaySecure.DAL.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Gender")
                         .HasColumnType("int");
@@ -252,7 +247,7 @@ namespace StaySecure.DAL.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("StaySecure.DAL.Models.LoginLog", b =>
+            modelBuilder.Entity("StaySecure.DAL.Models.ApplicationUserTranslations", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -260,30 +255,25 @@ namespace StaySecure.DAL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AttemptTime")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Email")
+                    b.Property<string>("City")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FailureReason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Success")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("UserId")
+                    b.Property<string>("Language")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("LoginLogs");
+                    b.HasIndex("ApplicationUserId");
+
+                    b.ToTable("applicationUserTranslations");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -335,6 +325,20 @@ namespace StaySecure.DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("StaySecure.DAL.Models.ApplicationUserTranslations", b =>
+                {
+                    b.HasOne("StaySecure.DAL.Models.ApplicationUser", "ApplicationUser")
+                        .WithMany("Translations")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.Navigation("ApplicationUser");
+                });
+
+            modelBuilder.Entity("StaySecure.DAL.Models.ApplicationUser", b =>
+                {
+                    b.Navigation("Translations");
                 });
 #pragma warning restore 612, 618
         }

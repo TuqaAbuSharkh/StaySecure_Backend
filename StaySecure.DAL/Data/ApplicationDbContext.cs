@@ -23,8 +23,7 @@ namespace StaySecure.DAL.Data
         }
         public IHttpContextAccessor HttpContextAccessor { get; }
 
-        public DbSet<ApplicationUserTranslations> applicationUserTranslations { get; set; }
-
+        public DbSet<LoginLog> LoginLogs { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
