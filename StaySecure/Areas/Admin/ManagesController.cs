@@ -1,10 +1,12 @@
 ﻿using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StaySecure.BLL.Services.IServices;
 using StaySecure.DAL.DTOs.Request;
+using StaySecure.DAL.Models;
 using StaySecure.PL.Resources;
 
 namespace StaySecure.PL.Areas.Admin
@@ -15,12 +17,15 @@ namespace StaySecure.PL.Areas.Admin
     {
         private readonly IManageUserService _ManageUserService;
         private readonly IStringLocalizer<SharedResource> _localizer;
+        private readonly UserManager<ApplicationUser> _userManager;
 
 
-        public ManagesController(IManageUserService ManageUserService, IStringLocalizer<SharedResource> Localizer)
+
+        public ManagesController(IManageUserService ManageUserService, IStringLocalizer<SharedResource> Localizer, UserManager<ApplicationUser> userManager)
         {
             _ManageUserService = ManageUserService;
             _localizer = Localizer;
+            _userManager = userManager;
         }
         //Leaderboard
         //public async Task<IActionResult> GetUsers([FromQuery] string lang="en")
@@ -60,5 +65,21 @@ namespace StaySecure.PL.Areas.Admin
 
 
 
+        [HttpGet("LoginLogs/{userId}")]
+        public async Task<IActionResult> GetLoginLogs([FromRoute] string userId)
+        {
+            
+            var logs = await _ManageUserService.GetLoginLogsAsync(userId);
+
+            return Ok(logs);
+        }
+
+
+        [HttpGet("AllLoginLogs")]
+        public async Task<IActionResult> GetAllLoginLogs()
+        {
+            var logs = await _ManageUserService.GetAllLoginLogsAsync();
+            return Ok(logs);
+        }
     }
 }

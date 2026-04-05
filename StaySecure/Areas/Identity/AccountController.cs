@@ -33,10 +33,23 @@ namespace StaySecure.PL.Areas.Identity
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var result = await _authenticationService.LoginAsync(request);
+
             if (!result.Success)
-            {
                 return BadRequest(result);
-            }
+
+            if (result.RequiresTwoFactor)
+                return Ok(result);
+
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+
+            result.RefreshToken = null; 
+
             return Ok(result);
 
         }
@@ -59,6 +72,16 @@ namespace StaySecure.PL.Areas.Identity
 
             if (!result.Success)
                 return BadRequest(result);
+
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+
+            result.RefreshToken = null;
 
             return Ok(result);
         }
@@ -107,12 +130,35 @@ namespace StaySecure.PL.Areas.Identity
         public async Task<IActionResult> RefreshToken(TokenApiModel request)
         {
             var result = await _authenticationService.RefreshTokenAsync(request);
+
             if (!result.Success)
-            {
                 return BadRequest(result);
-            }
+
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+
+            result.RefreshToken = null;
+
             return Ok(result);
         }
+
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var userName = User.Identity.Name;
+
+            var result = await _authenticationService.LogoutAsync(userName);
+
+            Response.Cookies.Delete("refreshToken");
+
+            return Ok("Logged out successfully");
+        }
+
 
     }
 }

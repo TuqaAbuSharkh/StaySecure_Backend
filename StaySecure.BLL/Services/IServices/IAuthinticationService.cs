@@ -24,6 +24,7 @@ namespace StaySecure.BLL.Services.IServices
         Task<ResetPasswordResponse> ResetPassword(ResetPasswordRequest request);
 
         Task<LoginResponse> RefreshTokenAsync(TokenApiModel request);
+        Task<bool> LogoutAsync(string userName);
 
     }
 }

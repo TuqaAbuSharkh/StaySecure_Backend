@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using StaySecure.BLL.Services.IServices;
+using StaySecure.DAL.Data;
 using StaySecure.DAL.DTOs.Request;
 using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.Models;
@@ -16,15 +17,17 @@ namespace StaySecure.BLL.Services
     public class ManageUserService : IManageUserService
     {
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public ManageUserService(UserManager<ApplicationUser> userManager)
+
+        public ManageUserService(UserManager<ApplicationUser> userManager,ApplicationDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
         public async Task<List<UserListResponse>> GetUsersAsync()
         {
-            var users = await _userManager.Users
-             .ToListAsync();
+            var users = await _userManager.Users.ToListAsync();
 
             var result = users.Adapt<List<UserListResponse>>();
 
@@ -32,11 +35,14 @@ namespace StaySecure.BLL.Services
             {
                 var roles = await _userManager.GetRolesAsync(users[i]);
                 result[i].Roles = roles.ToList();
+
+                result[i].IsBlocked =
+                    users[i].LockoutEnd != null &&
+                    users[i].LockoutEnd > DateTimeOffset.UtcNow;
             }
 
             return result;
         }
-
         public async Task<UserDetailsResponse> GetUserDetailsAsync(string Id)
         {
             var user = await _userManager.Users
@@ -52,14 +58,31 @@ namespace StaySecure.BLL.Services
         {
             var user = await _userManager.FindByIdAsync(userId);
 
+            if (user == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "User not found"
+                };
+            }
+
+            if (await _userManager.IsLockedOutAsync(user))
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "User already blocked"
+                };
+            }
+
             await _userManager.SetLockoutEnabledAsync(user, true);
             await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
-            await _userManager.UpdateAsync(user);
             return new BaseRespose
             {
                 Success = true,
-                Message = "user blocked "
+                Message = "User blocked successfully"
             };
         }
 
@@ -67,16 +90,33 @@ namespace StaySecure.BLL.Services
         {
             var user = await _userManager.FindByIdAsync(userId);
 
-            await _userManager.SetLockoutEnabledAsync(user, false);
+            if (user == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "User not found"
+                };
+            }
+
+            if (!await _userManager.IsLockedOutAsync(user))
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "User is not blocked"
+                };
+            }
+
             await _userManager.SetLockoutEndDateAsync(user, null);
 
-            await _userManager.UpdateAsync(user);
             return new BaseRespose
             {
                 Success = true,
-                Message = "user Unblocked "
+                Message = "User unblocked successfully"
             };
         }
+
         public async Task<BaseRespose> ChangeUserRoleAsync(ChangeUserRoleRequest request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId);
@@ -90,6 +130,38 @@ namespace StaySecure.BLL.Services
                 Message = "role Updated "
             };
         }
+
+        public async Task<List<LoginLog>> GetLoginLogsAsync(string userId)
+        {
+            return await _context.LoginLogs
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.AttemptTime)
+                .Select(x => new LoginLog
+                {
+                    Email = x.Email,
+                    AttemptTime = x.AttemptTime,
+                    Success = x.Success,
+                    FailureReason = x.FailureReason,
+                    IpAddress = x.IpAddress
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<LoginLog>> GetAllLoginLogsAsync()
+        {
+            return await _context.LoginLogs
+                .OrderByDescending(x => x.AttemptTime)
+                .Select(x => new LoginLog
+                {
+                    Email = x.Email,
+                    AttemptTime = x.AttemptTime,
+                    Success = x.Success,
+                    FailureReason = x.FailureReason,
+                    IpAddress = x.IpAddress
+                })
+                .ToListAsync();
+        }
+
 
 
     }

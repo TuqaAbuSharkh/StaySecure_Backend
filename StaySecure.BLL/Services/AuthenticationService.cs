@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using Azure;
+using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -71,7 +72,6 @@ namespace StaySecure.BLL.Services
                     };
                 }
 
-                // 🔥 هون المهم: إذا في 2FA
                 if (user.TwoFactorEnabled)
                 {
                     return new LoginResponse
@@ -139,6 +139,7 @@ namespace StaySecure.BLL.Services
                     Message = "Invalid 2FA code"
                 };
             }
+          
 
             return await GenerateTokens(user, ipAddress);
         }
@@ -200,6 +201,7 @@ namespace StaySecure.BLL.Services
 
             await LogLoginAttempt(user.Id, user.Email, true, ipAddress, null);
 
+           
             return new LoginResponse
             {
                 Success = true,
@@ -229,7 +231,7 @@ namespace StaySecure.BLL.Services
 
                 var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-                var emailUrl = $"https://staysecure.runasp.net/api/auth/ConfirmEmail?token={encodedToken}&userId={user.Id}";
+                var emailUrl = $"https://staysecure.runasp.net/api/auth/Account/ConfirmEmail?token={encodedToken}&userId={user.Id}";
 
                 await _emailSender.SendEmailAsync(
                     user.Email,
@@ -351,7 +353,7 @@ namespace StaySecure.BLL.Services
         public async Task<LoginResponse> RefreshTokenAsync(TokenApiModel request)
         {
             string accessToken = request.AccessToken;
-            string refreshToken = request.RefreshToken;
+            var refreshToken = _httpContextAccessor.HttpContext.Request.Cookies["refreshToken"];
 
             var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
             var username = principal.Identity.Name;
@@ -370,6 +372,7 @@ namespace StaySecure.BLL.Services
             user.RefreshToken = newRefreshToken;
             await _userManager.UpdateAsync(user);
 
+
             return new LoginResponse()
             {
                 Success = true,
@@ -378,6 +381,24 @@ namespace StaySecure.BLL.Services
                 RefreshToken = newRefreshToken
             };
         }
+
+        public async Task<bool> LogoutAsync(string userName)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+
+            if (user == null)
+                return false;
+
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+
+            await _userManager.UpdateAsync(user);
+
+            return true;
+        }
+
+
+
 
     }
 }
