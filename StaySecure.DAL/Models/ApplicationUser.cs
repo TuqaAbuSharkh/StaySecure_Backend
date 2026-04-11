@@ -20,11 +20,18 @@ namespace StaySecure.DAL.Models
         Advanced=2
     }
 
+    public enum AgeGroupEnum
+    {
+        Child = 1,      // <=11
+        Teen = 2,       // 12-18
+        Adult = 3       // 19+
+    }
 
     public class ApplicationUser :IdentityUser
     {
 
-        public int? Age { get; set; }
+        public int Age { get; set; }
+        public AgeGroupEnum AgeGroup { get; set; }
         public int TotalScore { get; set; } = 0;
 
         public string FullName { get; set; }
@@ -33,6 +40,8 @@ namespace StaySecure.DAL.Models
         public GenderEnum? Gender { get; set; } = (GenderEnum?)1;
 
         public LevelEnum Level { get; set; } = 0;
+
+        public int? Rank { get; set; }
 
         public string? CodeResetPassword { get; set; }
         public DateTime? PasswordResetCodeExpiry { get; set; }

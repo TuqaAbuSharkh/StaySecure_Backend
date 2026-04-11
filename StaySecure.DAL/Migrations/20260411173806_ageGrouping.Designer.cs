@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StaySecure.DAL.Data;
 
@@ -11,9 +12,11 @@ using StaySecure.DAL.Data;
 namespace StaySecure.DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411173806_ageGrouping")]
+    partial class ageGrouping
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -292,109 +295,6 @@ namespace StaySecure.DAL.Migrations
                     b.ToTable("LoginLogs");
                 });
 
-            modelBuilder.Entity("StaySecure.DAL.Models.Scenario", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Difficulty")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Scenarios");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioOption", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("IsCorrect")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("ScenarioId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ScenarioId");
-
-                    b.ToTable("ScenarioOptions");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioOptionTranslation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ScenarioOptionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ScenarioOptionId");
-
-                    b.ToTable("ScenarioOptionTranslations");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioTranslation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ScenarioId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ScenarioId");
-
-                    b.ToTable("ScenarioTranslations");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -444,51 +344,6 @@ namespace StaySecure.DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioOption", b =>
-                {
-                    b.HasOne("StaySecure.DAL.Models.Scenario", "Scenario")
-                        .WithMany("Options")
-                        .HasForeignKey("ScenarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Scenario");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioOptionTranslation", b =>
-                {
-                    b.HasOne("StaySecure.DAL.Models.ScenarioOption", "ScenarioOption")
-                        .WithMany("Translations")
-                        .HasForeignKey("ScenarioOptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ScenarioOption");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioTranslation", b =>
-                {
-                    b.HasOne("StaySecure.DAL.Models.Scenario", "Scenario")
-                        .WithMany("Translations")
-                        .HasForeignKey("ScenarioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Scenario");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.Scenario", b =>
-                {
-                    b.Navigation("Options");
-
-                    b.Navigation("Translations");
-                });
-
-            modelBuilder.Entity("StaySecure.DAL.Models.ScenarioOption", b =>
-                {
-                    b.Navigation("Translations");
                 });
 #pragma warning restore 612, 618
         }

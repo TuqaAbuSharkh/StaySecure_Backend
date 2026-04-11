@@ -1,6 +1,8 @@
-﻿using StaySecure.BLL.Services;
+﻿using Microsoft.AspNetCore.Identity.UI.Services;
+using StaySecure.BLL.Services;
 using StaySecure.BLL.Services.IServices;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using StaySecure.DAL.Repositories;
+using StaySecure.DAL.Repositories.Interface;
 using StaySecure.DAL.Utls;
 
 namespace StaySecure.PL
@@ -18,7 +20,8 @@ namespace StaySecure.PL
             Services.AddScoped<ISeedData, RoleSeedData>();
             Services.AddScoped<ISeedData, UserSeedData>();
 
-
+           Services.AddScoped<IScenarioService, ScenarioService>();
+            Services.AddScoped<IScenarioRepository, ScenarioRepository>();
         }
     }
 }

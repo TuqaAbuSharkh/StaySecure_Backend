@@ -97,6 +97,7 @@ namespace StaySecure.BLL.Services
             }
         }
 
+
         // دالة مساعدة لتسجيل الـ login
         private async Task LogLoginAttempt(string userId, string email, bool success, string ipAddress, string failureReason = null)
         {
@@ -227,6 +228,7 @@ namespace StaySecure.BLL.Services
                     };
                 }
                 await _userManager.AddToRoleAsync(user, "Student");
+                user.AgeGroup = (AgeGroupEnum)CalculateAgeGroup(user.Age);
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
                 var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
@@ -256,6 +258,12 @@ namespace StaySecure.BLL.Services
                 };
             }
 
+        }
+        private int CalculateAgeGroup(int age)
+        {
+            if (age <= 11) return 1;
+            if (age <= 18) return 2;
+            return 3;
         }
 
         public async Task<bool> ConfirmEmailAsync(string token, string userId)

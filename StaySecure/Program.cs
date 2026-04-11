@@ -29,7 +29,9 @@ namespace StaySecure
                 options.AddPolicy(name: MyAllowSpecificOrigins,
                                   policy =>
                                   {
-                                      policy.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod();
+                                      policy.WithOrigins("http://localhost:5174")
+                                                        .AllowAnyHeader()
+                                                        .AllowAnyMethod();
                                   });
             });
             // Add services to the container.

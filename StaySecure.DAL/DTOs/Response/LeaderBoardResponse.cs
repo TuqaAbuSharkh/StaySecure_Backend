@@ -7,19 +7,15 @@ using System.Threading.Tasks;
 
 namespace StaySecure.DAL.DTOs.Response
 {
-    public class UserListResponse
+    public class LeaderBoardResponse
     {
         public string Id { get; set; }
         public string UserName { get; set; }
-        public string Email { get; set; }
         public int Age { get; set; }
-        public int TotalScore { get; set; } 
+        public int TotalScore { get; set; }
         public LevelEnum Level { get; set; }
 
-        public string FullName { get; set; }
-        public bool IsBlocked { get; set; }
-        public List<string> Roles { get; set; }
-
+        public int? Rank { get; set; }
 
     }
 }

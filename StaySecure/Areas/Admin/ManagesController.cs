@@ -13,6 +13,8 @@ namespace StaySecure.PL.Areas.Admin
 {
     [Route("api/admin/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
+
     public class ManagesController : ControllerBase
     {
         private readonly IManageUserService _ManageUserService;
@@ -27,21 +29,8 @@ namespace StaySecure.PL.Areas.Admin
             _localizer = Localizer;
             _userManager = userManager;
         }
-        //Leaderboard
-        //public async Task<IActionResult> GetUsers([FromQuery] string lang="en")
-        //{
-        //    var result = await _ManageUserService.GetUsersAsync(lang);
-        //    return Ok(new { message = _localizer["Success"].Value, result });
-        //}
+  
 
-        [Authorize]
-        [HttpGet("userDetails/{userId}")]
-        public async Task<IActionResult> GetUserDetails([FromRoute] string userId )
-        {
-            var result = await _ManageUserService.GetUserDetailsAsync(userId);
-            return Ok(new { message = _localizer["Success"].Value, result });
-        }
-        [Authorize(Roles = "Admin")]
 
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
@@ -49,20 +38,45 @@ namespace StaySecure.PL.Areas.Admin
             var result = await _ManageUserService.GetUsersAsync();
             return Ok(new { message = _localizer["Success"].Value, result });
         }
-       
 
         [HttpPatch("block/{userId}")]
         public async Task<IActionResult> BlockUser([FromRoute] string userId)
-        => Ok(await _ManageUserService.BlockedUserAsync(userId));
+        {
+            if (string.IsNullOrEmpty(userId))
+                return BadRequest("Invalid userId");
 
-        [HttpPatch("Unblock/{userId}")]
+            var result = await _ManageUserService.BlockedUserAsync(userId);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpPatch("unblock/{userId}")]
         public async Task<IActionResult> UnBlockUser([FromRoute] string userId)
-        => Ok(await _ManageUserService.UnBlockedUserAsync(userId));
+        {
+            var result = await _ManageUserService.UnBlockedUserAsync(userId);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
 
         [HttpPatch("change-role")]
-        public async Task<IActionResult> ChangeUserRole(ChangeUserRoleRequest request)
-        => Ok(await _ManageUserService.ChangeUserRoleAsync(request));
+        public async Task<IActionResult> ChangeUserRole([FromBody] ChangeUserRoleRequest request)
+        {
+            if (request == null)
+                return BadRequest("Invalid request");
 
+            var result = await _ManageUserService.ChangeUserRoleAsync(request);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
 
 
         [HttpGet("LoginLogs/{userId}")]
@@ -73,7 +87,6 @@ namespace StaySecure.PL.Areas.Admin
 
             return Ok(logs);
         }
-
 
         [HttpGet("AllLoginLogs")]
         public async Task<IActionResult> GetAllLoginLogs()

@@ -47,6 +47,11 @@ namespace StaySecure.BLL.Services
         {
             var user = await _userManager.Users
               .FirstOrDefaultAsync(u => u.Id == Id);
+
+            if (user == null)
+            {
+                return null;
+            }
             var result = user.Adapt<UserDetailsResponse>();
             var roles = await _userManager.GetRolesAsync(user);
             result.Roles = roles.ToList();
@@ -120,16 +125,45 @@ namespace StaySecure.BLL.Services
         public async Task<BaseRespose> ChangeUserRoleAsync(ChangeUserRoleRequest request)
         {
             var user = await _userManager.FindByIdAsync(request.UserId);
+            if (user == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "Failed!"
+                };
+            }
             var currentRoles = await _userManager.GetRolesAsync(user);
 
-            await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            await _userManager.AddToRoleAsync(user, request.Role);
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            if (!removeResult.Succeeded)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "Failed!"
+                };
+            }
+
+            var addResult = await _userManager.AddToRoleAsync(user, request.Role);
+
+            if (!addResult.Succeeded)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "Failed !"
+                };
+            }
+
             return new BaseRespose
             {
                 Success = true,
-                Message = "role Updated "
+                Message = "Role updated successfully"
             };
         }
+        
 
         public async Task<List<LoginLog>> GetLoginLogsAsync(string userId)
         {
@@ -163,8 +197,35 @@ namespace StaySecure.BLL.Services
         }
 
 
+        public async Task<List<LeaderBoardResponse>> GetLeaderboardAsync(string userId)
+        {
+            var currentUser = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (currentUser == null)
+                throw new Exception("User not found");
+
+            var users = await _userManager.Users
+                .Where(u => u.Id != userId &&
+                            u.Level == currentUser.Level &&
+                            u.AgeGroup == currentUser.AgeGroup)
+                .OrderByDescending(u => u.TotalScore)
+                .Take(10)
+                .ToListAsync();
+
+            var result = users.Select((u, index) => new LeaderBoardResponse
+            {
+                Id = u.Id,
+                UserName = u.UserName,
+                TotalScore = u.TotalScore,
+                Level = u.Level,
+                Age = u.Age,
+                Rank = index + 1
+            }).ToList();
+
+            return result;
+        }
+
 
     }
-
-
 }

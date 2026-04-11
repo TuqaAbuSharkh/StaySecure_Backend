@@ -15,7 +15,10 @@ namespace StaySecure.BLL.MapsterConfigration
 
         public static void MapsterConfigRegister()
         {
-
+            TypeAdapterConfig<ApplicationUser, UserDetailsResponse>
+             .NewConfig()
+             .Map(dest => dest.IsBlocked,
+                  src => src.LockoutEnd != null && src.LockoutEnd > DateTimeOffset.UtcNow);
         }
     }
 }
