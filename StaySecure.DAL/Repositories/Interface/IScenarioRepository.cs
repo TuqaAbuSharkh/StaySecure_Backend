@@ -17,6 +17,7 @@ namespace StaySecure.DAL.Repositories.Interface
         Task<IQueryable<Scenario>> GetQueryableAsync();
         Task<Scenario?> GetByIdWithDetailsAsync(int id);
         Task UpdateAsync(Scenario scenario);
+        Task<List<UserScenario>> GetUserScenariosAsync(string userId);
 
     }
 }

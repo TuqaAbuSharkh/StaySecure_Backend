@@ -39,6 +39,26 @@ namespace StaySecure.PL.Areas.Admin
             return Ok(new { message = _localizer["Success"].Value, result });
         }
 
+        [HttpGet("userDetails/{userId}")]
+        public async Task<IActionResult> GetUserDetails([FromRoute] string userId)
+        {
+            var currentUserId = User.FindFirst("uid")?.Value;
+
+            if (currentUserId != userId && !User.IsInRole("Admin"))
+                return Forbid();
+
+            var result = await _ManageUserService.GetUserDetailsAsync(userId);
+
+            if (result == null)
+                return NotFound(new { message = _localizer["Error"].Value });
+
+            return Ok(new
+            {
+                message = _localizer["Success"].Value,
+                result
+            });
+        }
+
         [HttpPatch("block/{userId}")]
         public async Task<IActionResult> BlockUser([FromRoute] string userId)
         {

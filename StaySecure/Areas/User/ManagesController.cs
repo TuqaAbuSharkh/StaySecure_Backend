@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StaySecure.BLL.Services.IServices;
+using StaySecure.DAL.DTOs.Request;
 using StaySecure.DAL.Models;
 using StaySecure.PL.Resources;
+using System.Security.Claims;
 
 namespace StaySecure.PL.Areas.User
 {
@@ -28,13 +30,13 @@ namespace StaySecure.PL.Areas.User
             _userManager = userManager;
         }
 
-        [HttpGet("userDetails/{userId}")]
-        public async Task<IActionResult> GetUserDetails([FromRoute] string userId)
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
         {
-            var currentUserId = User.FindFirst("uid")?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (currentUserId != userId && !User.IsInRole("Admin"))
-                return Forbid();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
 
             var result = await _ManageUserService.GetUserDetailsAsync(userId);
 
@@ -48,11 +50,40 @@ namespace StaySecure.PL.Areas.User
             });
         }
 
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var response = await _ManageUserService.UpdateProfileAsync(userId, request);
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+
 
         [HttpGet("leaderboard/{userId}")]
         public async Task<IActionResult> GetLeaderboard(string userId)
         {
             var result = await _ManageUserService.GetLeaderboardAsync(userId);
+            return Ok(result);
+        }
+
+        [HttpGet("progress")]
+        public async Task<IActionResult> GetUserProgress()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+                return Unauthorized();
+
+            var result = await _ManageUserService.GetUserProgressAsync(user.Id);
+
             return Ok(result);
         }
     }

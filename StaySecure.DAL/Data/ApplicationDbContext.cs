@@ -32,7 +32,7 @@ namespace StaySecure.DAL.Data
         public DbSet<ScenarioOption> ScenarioOptions { get; set; }
 
         public DbSet<ScenarioOptionTranslation> ScenarioOptionTranslations { get; set; }
-
+        public DbSet<UserScenario> UserScenarios { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)

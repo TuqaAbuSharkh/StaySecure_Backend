@@ -19,6 +19,8 @@ namespace StaySecure.BLL.Services.IServices
         Task<BaseRespose> ChangeUserRoleAsync(ChangeUserRoleRequest request);
         Task<List<LoginLog>> GetLoginLogsAsync(string userId);
         Task<List<LoginLog>> GetAllLoginLogsAsync();
+        Task<UserProgressResponse> GetUserProgressAsync(string userId);
+        Task<BaseRespose> UpdateProfileAsync(string userId, UpdateProfileRequest request);
 
 
     }

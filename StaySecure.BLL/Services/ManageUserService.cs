@@ -6,6 +6,7 @@ using StaySecure.DAL.Data;
 using StaySecure.DAL.DTOs.Request;
 using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.Models;
+using StaySecure.DAL.Repositories.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,12 +19,13 @@ namespace StaySecure.BLL.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
+        private readonly IScenarioRepository _scenarioRepository;
 
-
-        public ManageUserService(UserManager<ApplicationUser> userManager,ApplicationDbContext context)
+        public ManageUserService(UserManager<ApplicationUser> userManager,ApplicationDbContext context, IScenarioRepository scenarioRepository)
         {
             _userManager = userManager;
             _context = context;
+            _scenarioRepository = scenarioRepository;
         }
         public async Task<List<UserListResponse>> GetUsersAsync()
         {
@@ -225,6 +227,87 @@ namespace StaySecure.BLL.Services
 
             return result;
         }
+
+
+        public async Task<BaseRespose> UpdateProfileAsync(string userId, UpdateProfileRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "User not found"
+                };
+            }
+
+            user.FullName = request.FullName;
+            user.Age = request.Age;
+            user.City = request.City;
+            user.Gender = request.Gender;
+
+            user.AgeGroup = (AgeGroupEnum)CalculateAgeGroup(user.Age);
+
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "Update failed",
+                    Errors = result.Errors.Select(e => e.Description).ToList()
+                };
+            }
+
+            return new BaseRespose
+            {
+                Success = true,
+                Message = "Profile updated successfully"
+            };
+        }
+
+        private int CalculateAgeGroup(int age)
+        {
+            if (age <= 11) return 1;
+            if (age <= 18) return 2;
+            return 3;
+        }
+
+        public async Task<UserProgressResponse> GetUserProgressAsync(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                throw new Exception("UserId is null");
+
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                throw new Exception("User not found");
+
+
+            var userScenarios = await _scenarioRepository.GetUserScenariosAsync(userId);
+
+            userScenarios = userScenarios ?? new List<UserScenario>();
+
+            var completed = userScenarios.Count;
+
+            var correct = userScenarios.Count(s => s.IsCorrect);
+
+            double successRate = completed == 0
+                ? 0
+                : (double)correct / completed * 100;
+
+            return new UserProgressResponse
+            {
+                TotalScore = user.TotalScore,
+                Level = user.Level,
+                CompletedScenarios = completed,
+                CorrectAnswers = correct,
+                SuccessRate = Math.Round(successRate, 2)
+            };
+        }
+
 
 
     }

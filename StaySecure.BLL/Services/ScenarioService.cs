@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using StaySecure.BLL.Services.IServices;
 using StaySecure.DAL.DTOs.Request;
 using StaySecure.DAL.DTOs.Response;
@@ -19,6 +20,7 @@ namespace StaySecure.BLL.Services
         public ScenarioService(IScenarioRepository scenarioRepository)
         {
             _scenarioRepository = scenarioRepository;
+           
         }
 
         public async Task<BaseRespose> CreateScenarioAsync(CreateScenarioRequest request)
@@ -244,6 +246,7 @@ namespace StaySecure.BLL.Services
 
 
       
+
 
     }
 }

@@ -62,6 +62,13 @@ namespace StaySecure.DAL.Repositories
             await _context.SaveChangesAsync();
         }
 
-        
+
+        public async Task<List<UserScenario>> GetUserScenariosAsync(string userId)
+        {
+            return await _context.UserScenarios
+                .Where(u => u.UserId == userId)
+                .ToListAsync();
+        }
+
     }
 }
