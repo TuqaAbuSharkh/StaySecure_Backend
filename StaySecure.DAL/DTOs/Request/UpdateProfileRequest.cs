@@ -13,6 +13,10 @@ namespace StaySecure.DAL.DTOs.Request
         public int Age { get; set; }
         public string City { get; set; }
         public GenderEnum? Gender { get; set; }
+        public string UserName { get; set; }
+        public string Email { get; set; }
+
+
     }
 
 }

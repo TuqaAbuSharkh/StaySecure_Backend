@@ -67,24 +67,7 @@ namespace StaySecure.PL.Areas.User
         }
 
 
-        [HttpGet("leaderboard/{userId}")]
-        public async Task<IActionResult> GetLeaderboard(string userId)
-        {
-            var result = await _ManageUserService.GetLeaderboardAsync(userId);
-            return Ok(result);
-        }
-
-        [HttpGet("progress")]
-        public async Task<IActionResult> GetUserProgress()
-        {
-            var user = await _userManager.GetUserAsync(User);
-
-            if (user == null)
-                return Unauthorized();
-
-            var result = await _ManageUserService.GetUserProgressAsync(user.Id);
-
-            return Ok(result);
-        }
+      
+       
     }
 }

@@ -41,7 +41,6 @@ namespace StaySecure.DAL.Models
 
         public LevelEnum Level { get; set; } = 0;
 
-        public int? Rank { get; set; }
 
         public string? CodeResetPassword { get; set; }
         public DateTime? PasswordResetCodeExpiry { get; set; }

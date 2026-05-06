@@ -15,14 +15,23 @@ namespace StaySecure.DAL.DTOs.Response
 
         public string FullName { get; set; }
         public string Email { get; set; }
-        public string PhoneNumber { get; set; }
+        public int Age { get; set; }
+        public AgeGroupEnum AgeGroup { get; set; }
+        public int TotalScore { get; set; } = 0;
 
+        public string City { get; set; }
+
+        public GenderEnum? Gender { get; set; } = (GenderEnum?)1;
+
+        public LevelEnum Level { get; set; } = 0;
 
         public bool EmailConfirmed { get; set; }
 
+        public bool TwoFactorEnabled { get; set; }
         public bool IsBlocked { get; set; }
         public List<string> Roles { get; set; }
 
+    
 
     }
 }

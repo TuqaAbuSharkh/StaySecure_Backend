@@ -51,7 +51,16 @@ namespace StaySecure.BLL.Services
                 if (user == null)
                 {
                     await LogLoginAttempt(null, request.Email, false, ipAddress, "Invalid Email");
-                    return new LoginResponse { Success = false, Message = "Invalid Email!" };
+                    return new LoginResponse { Success = false, Message = "Invalid Email or Password" };
+                }
+
+                if (!user.EmailConfirmed)
+                {
+                    return new LoginResponse
+                    {
+                        Success = false,
+                        Message = "Confirm your Email!"
+                    };
                 }
 
                 if (await _userManager.IsLockedOutAsync(user))
@@ -60,7 +69,11 @@ namespace StaySecure.BLL.Services
                     return new LoginResponse { Success = false, Message = "Account is locked!" };
                 }
 
+
+               
+
                 var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, true);
+
 
                 if (!result.Succeeded)
                 {
@@ -68,7 +81,7 @@ namespace StaySecure.BLL.Services
                     return new LoginResponse
                     {
                         Success = false,
-                        Message = "Invalid credentials"
+                        Message = "Invalid Email or Password"
                     };
                 }
 
@@ -114,9 +127,9 @@ namespace StaySecure.BLL.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<LoginResponse> VerifyTwoFactorAsync(string userId, string code)
+        public async Task<LoginResponse> VerifyTwoFactorAsync(string UserId, string code)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(UserId);
             var ipAddress = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
             if (user == null)
@@ -208,7 +221,8 @@ namespace StaySecure.BLL.Services
                 Success = true,
                 Message = "Login Successfully",
                 AccessToken = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                UserId = user.Id,
             };
         }
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
@@ -287,7 +301,6 @@ namespace StaySecure.BLL.Services
                 return new ForgetPasswordResponse
                 {
                     Success = false,
-                    Message = "Email not found"
                 };
             }
 
@@ -314,8 +327,7 @@ namespace StaySecure.BLL.Services
             {
                 return new ResetPasswordResponse
                 {
-                    Success = false,
-                    Message = "Email not found"
+                    Success = false
                 };
             }
             else if (user.CodeResetPassword != request.code)
@@ -323,7 +335,6 @@ namespace StaySecure.BLL.Services
                 return new ResetPasswordResponse
                 {
                     Success = false,
-                    Message = "invalid code"
                 };
             }
             else if (user.PasswordResetCodeExpiry < DateTime.UtcNow)
@@ -331,7 +342,6 @@ namespace StaySecure.BLL.Services
                 return new ResetPasswordResponse
                 {
                     Success = false,
-                    Message = "code Expired"
                 };
             }
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);

@@ -31,7 +31,8 @@ namespace StaySecure
                                   {
                                       policy.WithOrigins("http://localhost:5174")
                                                         .AllowAnyHeader()
-                                                        .AllowAnyMethod();
+                                                        .AllowAnyMethod()
+                                                        .AllowCredentials();
                                   });
             });
             // Add services to the container.
@@ -103,17 +104,27 @@ namespace StaySecure
 
             var app = builder.Build();
 
+            app.UseRouting();
+
+            app.UseCors(MyAllowSpecificOrigins); 
+
+            app.UseAuthentication();   
+            app.UseAuthorization();
+
             app.UseRequestLocalization(app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>().Value);
+
+            app.UseHttpsRedirection();
+
+            app.MapControllers();
+
+
+            
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
             }
 
-            app.UseHttpsRedirection();
-
-            app.UseCors(MyAllowSpecificOrigins);
-            app.UseAuthorization();
 
             using (var scope = app.Services.CreateScope())
             {
@@ -126,7 +137,7 @@ namespace StaySecure
                 }
             }
 
-            app.MapControllers();
+          
 
             app.Run();
         }

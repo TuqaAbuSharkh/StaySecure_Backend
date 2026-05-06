@@ -199,36 +199,6 @@ namespace StaySecure.BLL.Services
         }
 
 
-        public async Task<List<LeaderBoardResponse>> GetLeaderboardAsync(string userId)
-        {
-            var currentUser = await _userManager.Users
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (currentUser == null)
-                throw new Exception("User not found");
-
-            var users = await _userManager.Users
-                .Where(u => u.Id != userId &&
-                            u.Level == currentUser.Level &&
-                            u.AgeGroup == currentUser.AgeGroup)
-                .OrderByDescending(u => u.TotalScore)
-                .Take(10)
-                .ToListAsync();
-
-            var result = users.Select((u, index) => new LeaderBoardResponse
-            {
-                Id = u.Id,
-                UserName = u.UserName,
-                TotalScore = u.TotalScore,
-                Level = u.Level,
-                Age = u.Age,
-                Rank = index + 1
-            }).ToList();
-
-            return result;
-        }
-
-
         public async Task<BaseRespose> UpdateProfileAsync(string userId, UpdateProfileRequest request)
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -246,6 +216,8 @@ namespace StaySecure.BLL.Services
             user.Age = request.Age;
             user.City = request.City;
             user.Gender = request.Gender;
+            user.Email = request.Email;
+            user.UserName = request.UserName;
 
             user.AgeGroup = (AgeGroupEnum)CalculateAgeGroup(user.Age);
 
@@ -275,38 +247,7 @@ namespace StaySecure.BLL.Services
             return 3;
         }
 
-        public async Task<UserProgressResponse> GetUserProgressAsync(string userId)
-        {
-            if (string.IsNullOrEmpty(userId))
-                throw new Exception("UserId is null");
-
-            var user = await _userManager.FindByIdAsync(userId);
-
-            if (user == null)
-                throw new Exception("User not found");
-
-
-            var userScenarios = await _scenarioRepository.GetUserScenariosAsync(userId);
-
-            userScenarios = userScenarios ?? new List<UserScenario>();
-
-            var completed = userScenarios.Count;
-
-            var correct = userScenarios.Count(s => s.IsCorrect);
-
-            double successRate = completed == 0
-                ? 0
-                : (double)correct / completed * 100;
-
-            return new UserProgressResponse
-            {
-                TotalScore = user.TotalScore,
-                Level = user.Level,
-                CompletedScenarios = completed,
-                CorrectAnswers = correct,
-                SuccessRate = Math.Round(successRate, 2)
-            };
-        }
+       
 
 
 

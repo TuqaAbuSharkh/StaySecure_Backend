@@ -19,11 +19,11 @@ namespace StaySecure.BLL.Services
             {
                 EnableSsl = true,
                 UseDefaultCredentials = false,
-                Credentials = new NetworkCredential("abusharktuqa@gmail.com", "tiho gnrk mmyo ryes")
+                Credentials = new NetworkCredential("staysecure07@gmail.com", "tscm rxpl qiwg cpoy")
             };
 
             return client.SendMailAsync(
-                new MailMessage(from: "abusharktuqa@gmail.com",
+                new MailMessage(from: "staysecure07@gmail.com",
                                 to: email,
                                 subject,
                                 htmlMessage
