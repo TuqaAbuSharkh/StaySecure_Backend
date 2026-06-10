@@ -70,5 +70,49 @@ namespace StaySecure.DAL.Repositories
                 .ToListAsync();
         }
 
+        public async Task<Scenario?> GetNextScenarioAsync(
+    AgeGroupEnum ageGroup,
+    LevelEnum level,
+    List<int> completedScenarioIds)
+        {
+            return await _context.Scenarios
+         .Include(x => x.Translations)
+         .Include(x => x.Options)
+             .ThenInclude(x => x.Translations)
+         .FirstOrDefaultAsync(x =>
+             x.AgeGroup == ageGroup &&
+             x.Level == level &&
+             !completedScenarioIds.Contains(x.Id));
+        }
+
+        public async Task<ScenarioOption?> GetOptionByIdAsync(int optionId)
+        {
+            return await _context.ScenarioOptions
+        .FirstOrDefaultAsync(x => x.Id == optionId);
+        }
+
+        public async Task AddUserScenarioAsync(
+    UserScenario userScenario)
+        {
+            await _context.UserScenarios.AddAsync(userScenario);
+
+            await _context.SaveChangesAsync();
+        }
+
+
+       public async Task<List<Scenario>> GetScenariosByAgeGroupAndLevelAsync(AgeGroupEnum ageGroup, LevelEnum level)
+        {
+            return await _context.Scenarios
+       .Include(x => x.Translations)
+       .Where(x =>
+           x.AgeGroup == ageGroup &&
+           x.Level == level)
+       .ToListAsync();
+        }
+
+
+
+
+
     }
 }

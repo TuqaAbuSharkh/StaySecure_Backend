@@ -19,5 +19,13 @@ namespace StaySecure.DAL.Repositories.Interface
         Task UpdateAsync(Scenario scenario);
         Task<List<UserScenario>> GetUserScenariosAsync(string userId);
 
+        Task<Scenario?> GetNextScenarioAsync( AgeGroupEnum ageGroup, LevelEnum level, List<int> completedScenarioIds);
+
+        Task<ScenarioOption?> GetOptionByIdAsync(int optionId);
+
+        Task AddUserScenarioAsync(UserScenario userScenario);
+
+        Task<List<Scenario>> GetScenariosByAgeGroupAndLevelAsync( AgeGroupEnum ageGroup, LevelEnum level);
+
     }
 }

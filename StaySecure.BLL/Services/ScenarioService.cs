@@ -16,11 +16,13 @@ namespace StaySecure.BLL.Services
     public class ScenarioService : IScenarioService
     {
         private readonly IScenarioRepository _scenarioRepository;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ScenarioService(IScenarioRepository scenarioRepository)
+        public ScenarioService(IScenarioRepository scenarioRepository, UserManager<ApplicationUser> userManager)
         {
             _scenarioRepository = scenarioRepository;
-           
+            _userManager = userManager;
+
         }
 
         public async Task<BaseRespose> CreateScenarioAsync(CreateScenarioRequest request)
@@ -67,9 +69,12 @@ namespace StaySecure.BLL.Services
 
             var scenario = new Scenario
             {
-                Difficulty = request.Difficulty,
+                AgeGroup = request.AgeGroup,
+                Level = request.Level,
                 Score = request.Score,
                 CreatedAt = DateTime.UtcNow,
+                Hint = request.Hint,
+                HintPenalty = request.HintPenalty,
 
                 Translations = request.Translations.Select(t => new ScenarioTranslation
                 {
@@ -124,48 +129,152 @@ namespace StaySecure.BLL.Services
         }
 
 
-        public async Task<PagedResponse<ScenarioListResponse>> GetAllScenariosAsync(GetScenariosRequest request)
+        public async Task<List<ScenarioListResponse>> GetAllScenariosAsync(AgeGroupEnum ageGroup, LevelEnum level, string lang)
         {
-            var query = await _scenarioRepository.GetQueryableAsync();
+            var scenarios = await _scenarioRepository.GetScenariosByAgeGroupAndLevelAsync(ageGroup, level);
 
-            if (request.Difficulty.HasValue)
-                query = query.Where(s => s.Difficulty == request.Difficulty.Value);
-
-            if (!string.IsNullOrEmpty(request.Search))
-            {
-                query = query.Where(s =>
-                    s.Translations.Any(t => t.Title.Contains(request.Search)));
-            }
-
-            var totalCount = await query.CountAsync();
-
-            var scenarios = await query
-                .OrderByDescending(s => s.CreatedAt)
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync();
-
-            var data = scenarios.Select(s =>
+            return scenarios.Select(s =>
             {
                 var translation = s.Translations
-                    .FirstOrDefault(t => t.Language == request.Lang);
+                    .FirstOrDefault(t => t.Language == lang);
 
                 return new ScenarioListResponse
                 {
                     Id = s.Id,
-                    Difficulty = s.Difficulty,
+                    AgeGroup = s.AgeGroup,
+                    Level = s.Level,
                     Score = s.Score,
-                    Title = translation?.Title ?? "No Title",
-                    Category = translation?.Category ?? "No Category"
+                    Title = translation?.Title ?? "",
+                    Category = translation?.Category ?? ""
                 };
             }).ToList();
+        }
 
-            return new PagedResponse<ScenarioListResponse>
+        public async Task<ScenarioPlayResponse?> GetNextScenarioAsync(string userId, string lang)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                return null;
+
+            var completedScenarios =
+                await _scenarioRepository.GetUserScenariosAsync(userId);
+
+            var scenario =
+                await _scenarioRepository.GetNextScenarioAsync(
+                    user.AgeGroup,
+                    user.Level,
+                    completedScenarios
+                        .Select(x => x.ScenarioId)
+                        .ToList());
+
+            if (scenario == null)
+                return null;
+
+            var translation = scenario.Translations
+                .FirstOrDefault(x => x.Language == lang)
+                ?? scenario.Translations.First();
+
+            return new ScenarioPlayResponse
             {
-                Data = data,
-                PageNumber = request.PageNumber,
-                PageSize = request.PageSize,
-                TotalCount = totalCount
+                Id = scenario.Id,
+                Title = translation.Title,
+                Description = translation.Description,
+                Category = translation.Category,
+                Score = scenario.Score,
+                Hint = scenario.Hint,
+                HintPenalty = scenario.HintPenalty,
+
+                Options = scenario.Options.Select(o =>
+                {
+                    var optionTranslation = o.Translations
+                        .FirstOrDefault(x => x.Language == lang)
+                        ?? o.Translations.First();
+
+                    return new OptionResponse
+                    {
+                        Id = o.Id,
+                        Text = optionTranslation.Text
+                    };
+                }).ToList()
+            };
+
+        }
+
+        public async Task<BaseRespose> SubmitScenarioAsync(string userId, SubmitScenarioRequest request)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "User not found"
+                };
+            }
+
+            var scenario =
+                await _scenarioRepository.GetByIdAsync(request.ScenarioId);
+
+            if (scenario == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "Scenario not found"
+                };
+            }
+
+            var option =
+                await _scenarioRepository.GetOptionByIdAsync(
+                    request.OptionId);
+
+            if (option == null)
+            {
+                return new BaseRespose
+                {
+                    Success = false,
+                    Message = "Option not found"
+                };
+            }
+
+            var isCorrect = option.IsCorrect;
+
+            await _scenarioRepository.AddUserScenarioAsync(
+                new UserScenario
+                {
+                    UserId = userId,
+                    ScenarioId = scenario.Id,
+                    IsCorrect = isCorrect,
+                    CompletedAt = DateTime.UtcNow
+                });
+
+            if (isCorrect)
+            {
+                var earnedScore = scenario.Score;
+
+                if (request.HintUsed)
+                {
+                    earnedScore -= scenario.HintPenalty;
+
+                    if (earnedScore < 0)
+                    {
+                        earnedScore = 0;
+                    }
+                }
+
+                user.TotalScore += earnedScore;
+
+                await _userManager.UpdateAsync(user);
+            }
+
+            return new BaseRespose
+            {
+                Success = true,
+                Message = isCorrect
+                    ? "Correct answer"
+                    : "Wrong answer"
             };
         }
 
@@ -212,8 +321,10 @@ namespace StaySecure.BLL.Services
                 };
             }
 
-            scenario.Difficulty = request.Difficulty;
+            scenario.Level = request.Level;
             scenario.Score = request.Score;
+            scenario.Hint = request.Hint;
+            scenario.HintPenalty = request.HintPenalty;
 
             scenario.Translations.Clear();
             scenario.Translations = request.Translations.Select(t => new ScenarioTranslation

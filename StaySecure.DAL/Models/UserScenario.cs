@@ -17,6 +17,7 @@ namespace StaySecure.DAL.Models
 
         public bool IsCorrect { get; set; }
 
+        public bool HintUsed { get; set; } = false;
         public DateTime CompletedAt { get; set; }
     }
 

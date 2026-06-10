@@ -11,8 +11,13 @@ namespace StaySecure.DAL.DTOs.Request
     {
         public int Id { get; set; }
 
-        public LevelEnum Difficulty { get; set; }
+        public AgeGroupEnum AgeGroup { get; set; }
+
+        public LevelEnum Level { get; set; }
         public int Score { get; set; }
+        public string? Hint { get; set; }
+
+        public int HintPenalty { get; set; }
 
         public List<ScenarioTranslationDto> Translations { get; set; }
         public List<ScenarioOptionDto> Options { get; set; }

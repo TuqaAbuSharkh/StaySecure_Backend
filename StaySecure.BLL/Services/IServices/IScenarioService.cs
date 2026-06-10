@@ -13,10 +13,12 @@ namespace StaySecure.BLL.Services.IServices
     {
         Task<BaseRespose> CreateScenarioAsync(CreateScenarioRequest request);
         Task<BaseRespose> DeleteScenarioAsync(int scenarioId);
-        Task<PagedResponse<ScenarioListResponse>> GetAllScenariosAsync(GetScenariosRequest request);
+        Task<List<ScenarioListResponse>> GetAllScenariosAsync(AgeGroupEnum ageGroup, LevelEnum level, string lang);
 
         Task<BaseRespose> UpdateScenarioAsync(UpdateScenarioRequest request);
-        
 
-        }
+        Task<ScenarioPlayResponse?> GetNextScenarioAsync(string userId,string lang);
+
+        Task<BaseRespose> SubmitScenarioAsync(string userId, SubmitScenarioRequest request);
+    }
 }

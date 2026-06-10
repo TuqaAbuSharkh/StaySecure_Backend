@@ -13,7 +13,8 @@ namespace StaySecure.PL.Areas.User
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Student")]
+
     public class BoardsController : ControllerBase
     {
 

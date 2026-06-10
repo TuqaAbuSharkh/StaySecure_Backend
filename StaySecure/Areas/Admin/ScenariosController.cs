@@ -48,11 +48,13 @@ namespace StaySecure.PL.Areas.Admin
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllScenarios([FromQuery] GetScenariosRequest request)
+        public async Task<IActionResult> GetAllScenarios([FromQuery] AgeGroupEnum ageGroup,[FromQuery] LevelEnum level,[FromQuery] string lang = "en")
         {
-            var result = await _scenarioService.GetAllScenariosAsync(request);
+            var result = await _scenarioService.GetAllScenariosAsync(ageGroup, level, lang);
             return Ok(result);
         }
+
+        
 
         [HttpPut]
         public async Task<IActionResult> UpdateScenario([FromBody] UpdateScenarioRequest request)
