@@ -19,6 +19,12 @@ namespace StaySecure.BLL.Services.IServices
 
         Task<ScenarioPlayResponse?> GetNextScenarioAsync(string userId,string lang);
 
-        Task<BaseRespose> SubmitScenarioAsync(string userId, SubmitScenarioRequest request);
+        Task<SubmitScenarioResponse> SubmitScenarioAsync(string userId, SubmitScenarioRequest request);
+
+        Task<HintResponse?> GetHintAsync(string userId,int scenarioId);
+
+
+
+
     }
 }

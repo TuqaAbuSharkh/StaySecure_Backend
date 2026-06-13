@@ -5,6 +5,7 @@ using StaySecure.DAL.DTOs.Request;
 using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.Models;
 using StaySecure.DAL.Repositories.Interface;
+using Stripe;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,12 +18,13 @@ namespace StaySecure.BLL.Services
     {
         private readonly IScenarioRepository _scenarioRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAiService _aiService;
 
-        public ScenarioService(IScenarioRepository scenarioRepository, UserManager<ApplicationUser> userManager)
+        public ScenarioService(IScenarioRepository scenarioRepository, UserManager<ApplicationUser> userManager,IAiService aiService)
         {
             _scenarioRepository = scenarioRepository;
             _userManager = userManager;
-
+            _aiService = aiService;
         }
 
         public async Task<BaseRespose> CreateScenarioAsync(CreateScenarioRequest request)
@@ -150,7 +152,7 @@ namespace StaySecure.BLL.Services
             }).ToList();
         }
 
-        public async Task<ScenarioPlayResponse?> GetNextScenarioAsync(string userId, string lang)
+        public async Task<ScenarioPlayResponse?> GetNextScenarioAsync( string userId, string lang)
         {
             var user = await _userManager.FindByIdAsync(userId);
 
@@ -168,8 +170,105 @@ namespace StaySecure.BLL.Services
                         .Select(x => x.ScenarioId)
                         .ToList());
 
+            // خلصت السيناريوهات الثابتة
             if (scenario == null)
-                return null;
+            {
+                var requiredScore = 70;
+
+                if (user.TotalScore >= requiredScore)
+                {
+                    if (user.Level != LevelEnum.Advanced)
+                    {
+                        user.Level++;
+
+                        await _userManager.UpdateAsync(user);
+                    }
+
+                    return null;
+                }
+
+                // نقاط الضعف
+                var weakTopics =
+                    await _scenarioRepository
+                        .GetTopWeakCategoriesAsync(userId);
+
+                // توليد سيناريو من Gemini
+                var aiScenario =
+                    await _aiService.GenerateScenarioAsync(
+                        weakTopics,
+                        user.AgeGroup,
+                        user.Level);
+
+                if (aiScenario == null)
+                    return null;
+
+                // حفظ السيناريو المولد
+                var generatedScenario = new Scenario
+                {
+                    AgeGroup = user.AgeGroup,
+                    Level = user.Level,
+
+                    IsAiGenerated = true,
+
+                    Score = 5,
+                    Hint = "Think carefully before acting.",
+                    HintPenalty = 1,
+
+                    Translations = new List<ScenarioTranslation>
+            {
+                new ScenarioTranslation
+                {
+                    Language = "en",
+                    Title = aiScenario.Title,
+                    Description = aiScenario.Description,
+                    Category = aiScenario.Category
+                }
+            },
+
+                    Options = aiScenario.Options.Select(x =>
+                        new ScenarioOption
+                        {
+                            IsCorrect = x.IsCorrect,
+
+                            Translations =
+                            [
+                                new ScenarioOptionTranslation
+                        {
+                            Language = "en",
+                            Text = x.Text
+                        }
+                            ]
+                        }).ToList()
+                };
+
+                await _scenarioRepository.AddAsync(
+                    generatedScenario);
+
+                return new ScenarioPlayResponse
+                {
+                    Id = generatedScenario.Id,
+
+                    Title = aiScenario.Title,
+
+                    Description = aiScenario.Description,
+
+                    Category = aiScenario.Category,
+
+                    Score = generatedScenario.Score,
+
+                    Hint = generatedScenario.Hint,
+
+                    HintPenalty = generatedScenario.HintPenalty,
+
+                    Options = generatedScenario.Options
+                        .Select(o => new OptionResponse
+                        {
+                            Id = o.Id,
+                            Text = o.Translations.First().Text
+                        })
+                        .ToList()
+                };
+            }
 
             var translation = scenario.Translations
                 .FirstOrDefault(x => x.Language == lang)
@@ -198,16 +297,15 @@ namespace StaySecure.BLL.Services
                     };
                 }).ToList()
             };
-
         }
 
-        public async Task<BaseRespose> SubmitScenarioAsync(string userId, SubmitScenarioRequest request)
+        public async Task<SubmitScenarioResponse> SubmitScenarioAsync(string userId, SubmitScenarioRequest request)
         {
             var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
             {
-                return new BaseRespose
+                return new SubmitScenarioResponse
                 {
                     Success = false,
                     Message = "User not found"
@@ -219,7 +317,7 @@ namespace StaySecure.BLL.Services
 
             if (scenario == null)
             {
-                return new BaseRespose
+                return new SubmitScenarioResponse
                 {
                     Success = false,
                     Message = "Scenario not found"
@@ -232,7 +330,7 @@ namespace StaySecure.BLL.Services
 
             if (option == null)
             {
-                return new BaseRespose
+                return new SubmitScenarioResponse
                 {
                     Success = false,
                     Message = "Option not found"
@@ -240,7 +338,27 @@ namespace StaySecure.BLL.Services
             }
 
             var isCorrect = option.IsCorrect;
+            if (!isCorrect)
+            {
+                var category = scenario.Translations.First().Category;
 
+                await _scenarioRepository.IncreaseWeakCategoryAsync(
+                    userId,
+                    category);
+            }
+            var title = scenario.Translations.FirstOrDefault()?.Title ?? "";
+            string feedback = "";
+
+            try
+            {
+                feedback = await _aiService.GenerateFeedbackAsync(
+                    title,
+                    isCorrect);
+            }
+            catch (Exception ex)
+            {
+                feedback = ex.ToString();
+            }
             await _scenarioRepository.AddUserScenarioAsync(
                 new UserScenario
                 {
@@ -269,12 +387,14 @@ namespace StaySecure.BLL.Services
                 await _userManager.UpdateAsync(user);
             }
 
-            return new BaseRespose
+            return new SubmitScenarioResponse
             {
                 Success = true,
                 Message = isCorrect
-                    ? "Correct answer"
-                    : "Wrong answer"
+         ? "Correct answer"
+         : "Wrong answer",
+                IsCorrect = isCorrect,
+                Feedback = feedback
             };
         }
 
@@ -355,8 +475,22 @@ namespace StaySecure.BLL.Services
             };
         }
 
+        public async Task<HintResponse?> GetHintAsync( string userId,int scenarioId)
+        {
+            var scenario =
+                await _scenarioRepository.GetByIdAsync(
+                    scenarioId);
 
-      
+            if (scenario == null)
+                return null;
+
+            return new HintResponse
+            {
+                Hint = scenario.Hint,
+                HintPenalty = scenario.HintPenalty
+            };
+        }
+
 
 
     }

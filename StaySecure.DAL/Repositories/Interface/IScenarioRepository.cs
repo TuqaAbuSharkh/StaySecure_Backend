@@ -27,5 +27,9 @@ namespace StaySecure.DAL.Repositories.Interface
 
         Task<List<Scenario>> GetScenariosByAgeGroupAndLevelAsync( AgeGroupEnum ageGroup, LevelEnum level);
 
+
+        Task IncreaseWeakCategoryAsync( string userId, string category);
+
+        Task<List<string>> GetTopWeakCategoriesAsync(string userId);
     }
 }

@@ -33,7 +33,6 @@ namespace StaySecure.PL.Areas.User
         }
 
         [HttpGet("leaderboard")]
-        [Authorize]
         public async Task<IActionResult> GetLeaderboard()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

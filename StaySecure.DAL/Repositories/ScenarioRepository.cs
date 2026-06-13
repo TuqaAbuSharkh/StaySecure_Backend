@@ -111,8 +111,43 @@ namespace StaySecure.DAL.Repositories
         }
 
 
+        public async Task IncreaseWeakCategoryAsync( string userId,string category)
+        {
+            var weakCategory =
+                await _context.UserWeakCategories
+                    .FirstOrDefaultAsync(x =>
+                        x.UserId == userId &&
+                        x.Category == category);
+
+            if (weakCategory == null)
+            {
+                weakCategory = new UserWeakCategory
+                {
+                    UserId = userId,
+                    Category = category,
+                    MistakeCount = 1
+                };
+
+                _context.UserWeakCategories.Add(weakCategory);
+            }
+            else
+            {
+                weakCategory.MistakeCount++;
+            }
+
+            await _context.SaveChangesAsync();
+        }
 
 
+        public async Task<List<string>> GetTopWeakCategoriesAsync(string userId)
+        {
+            return await _context.UserWeakCategories
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.MistakeCount)
+                .Take(3)
+                .Select(x => x.Category)
+                .ToListAsync();
+        }
 
     }
 }

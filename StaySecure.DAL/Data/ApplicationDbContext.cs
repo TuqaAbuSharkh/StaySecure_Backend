@@ -34,6 +34,7 @@ namespace StaySecure.DAL.Data
         public DbSet<ScenarioOptionTranslation> ScenarioOptionTranslations { get; set; }
         public DbSet<UserScenario> UserScenarios { get; set; }
 
+        public DbSet<UserWeakCategory> UserWeakCategories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

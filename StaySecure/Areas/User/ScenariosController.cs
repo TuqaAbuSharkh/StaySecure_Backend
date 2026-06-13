@@ -50,8 +50,25 @@ namespace StaySecure.PL.Areas.User
             return Ok(result);
         }
 
+        [HttpGet("{scenarioId}/hint")]
+        public async Task<IActionResult> GetHint(int scenarioId)
+        {
+            var userId =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-       
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result =
+                await _scenarioService.GetHintAsync(
+                    userId,
+                    scenarioId);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
 
 
     }

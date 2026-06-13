@@ -12,6 +12,6 @@ namespace StaySecure.BLL.Services.IServices
         Task<UserProgressResponse> GetUserProgressAsync(string userId);
         Task<List<LeaderBoardResponse>> GetLeaderboardAsync(string userId);
 
-
+        Task<AdminLeaderboardResponse> GetAdminLeaderboardAsync();
     }
 }

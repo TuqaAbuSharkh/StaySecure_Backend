@@ -19,6 +19,8 @@ namespace StaySecure.DAL.Models
 
         public int HintPenalty { get; set; } = 0;
 
+        public bool IsAiGenerated { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public ICollection<ScenarioOption> Options { get; set; }

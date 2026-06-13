@@ -24,6 +24,8 @@ namespace StaySecure.PL
             Services.AddScoped<IScenarioRepository, ScenarioRepository>();
 
             Services.AddScoped<IDashBoardService, DashBoardService>();
+
+            Services.AddScoped<IAiService, GeminiAiService>();
         }
     }
 }

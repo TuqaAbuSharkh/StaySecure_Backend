@@ -102,5 +102,56 @@ namespace StaySecure.BLL.Services
             return result;
         }
 
+
+        public async Task<AdminLeaderboardResponse> GetAdminLeaderboardAsync()
+        {
+            var users = await _userManager.Users
+                .OrderByDescending(x => x.TotalScore)
+                .ToListAsync();
+
+            return new AdminLeaderboardResponse
+            {
+                Children = BuildLeaderboard(
+                    users.Where(x => x.AgeGroup == AgeGroupEnum.Child).ToList()),
+
+                Teens = BuildLeaderboard(
+                    users.Where(x => x.AgeGroup == AgeGroupEnum.Teen).ToList()),
+
+                Adults = BuildLeaderboard(
+                    users.Where(x => x.AgeGroup == AgeGroupEnum.Adult).ToList())
+            };
+        }
+
+        private List<LeaderBoardResponse> BuildLeaderboard(
+    List<ApplicationUser> users)
+        {
+            var result = new List<LeaderBoardResponse>();
+
+            int rank = 0;
+            int previousScore = -1;
+
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (users[i].TotalScore != previousScore)
+                {
+                    rank = i + 1;
+                    previousScore = users[i].TotalScore;
+                }
+
+                result.Add(new LeaderBoardResponse
+                {
+                    Id = users[i].Id,
+                    UserName = users[i].UserName,
+                    Age = users[i].Age,
+                    TotalScore = users[i].TotalScore,
+                    Level = users[i].Level,
+                    Rank = rank
+                });
+            }
+
+            return result;
+        }
+
+
     }
 }
