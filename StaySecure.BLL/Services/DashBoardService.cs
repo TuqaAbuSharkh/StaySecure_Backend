@@ -71,6 +71,7 @@ namespace StaySecure.BLL.Services
             var users = await _userManager.Users
                 .Where(u => u.AgeGroup == currentUser.AgeGroup)
                 .OrderByDescending(u => u.TotalScore)
+                .Take(10)
                 .ToListAsync();
 
             var result = new List<LeaderBoardResponse>();

@@ -491,7 +491,43 @@ namespace StaySecure.BLL.Services
             };
         }
 
+        public async Task<ScenarioPlayResponse?> GetScenarioByIdAsync( int scenarioId,string lang)
+        {
+            var scenario =
+                await _scenarioRepository.GetByIdAsync(
+                    scenarioId);
 
+            if (scenario == null)
+                return null;
+
+            var translation = scenario.Translations
+                .FirstOrDefault(x => x.Language == lang)
+                ?? scenario.Translations.First();
+
+            return new ScenarioPlayResponse
+            {
+                Id = scenario.Id,
+                Title = translation.Title,
+                Description = translation.Description,
+                Category = translation.Category,
+                Score = scenario.Score,
+                Hint = scenario.Hint,
+                HintPenalty = scenario.HintPenalty,
+
+                Options = scenario.Options.Select(o =>
+                {
+                    var optionTranslation = o.Translations
+                        .FirstOrDefault(x => x.Language == lang)
+                        ?? o.Translations.First();
+
+                    return new OptionResponse
+                    {
+                        Id = o.Id,
+                        Text = optionTranslation.Text
+                    };
+                }).ToList()
+            };
+        }
 
     }
 }

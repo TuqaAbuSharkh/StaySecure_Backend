@@ -23,7 +23,7 @@ namespace StaySecure.BLL.Services.IServices
 
         Task<HintResponse?> GetHintAsync(string userId,int scenarioId);
 
-
+        Task<ScenarioPlayResponse?> GetScenarioByIdAsync(int scenarioId, string lang);
 
 
     }

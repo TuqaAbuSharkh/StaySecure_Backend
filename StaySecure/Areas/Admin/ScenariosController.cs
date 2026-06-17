@@ -67,5 +67,27 @@ namespace StaySecure.PL.Areas.Admin
             return Ok(response);
         }
 
+
+        [HttpGet("{scenarioId}")]
+        public async Task<IActionResult> GetScenarioById(int scenarioId, [FromQuery] string lang = "en")
+        {
+            var result =
+                await _scenarioService.GetScenarioByIdAsync(
+                    scenarioId,
+                    lang);
+
+            if (result == null)
+            {
+                return NotFound(new 
+                {
+                    Success = false,
+                    Message = "Scenario not found"
+                });
+            }
+
+            return Ok(result);
+        }
+
+
     }
 }
