@@ -14,6 +14,8 @@ using StaySecure.PL;
 using Stripe;
 using System.Globalization;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace StaySecure
 {
@@ -38,6 +40,20 @@ namespace StaySecure
             // Add services to the container.
 
             builder.Services.AddControllers();
+
+
+            //for rate limiter
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter("GlobalPolicy", opt =>
+                {
+                    opt.PermitLimit = 10;
+                    opt.Window = TimeSpan.FromSeconds(2);
+                    opt.QueueLimit = 0;
+                });
+            });
+
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
@@ -105,6 +121,7 @@ namespace StaySecure
             var app = builder.Build();
 
             app.UseRouting();
+            app.UseRateLimiter();
 
             app.UseCors(MyAllowSpecificOrigins); 
 

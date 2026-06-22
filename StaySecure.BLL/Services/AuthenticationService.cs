@@ -104,7 +104,7 @@ namespace StaySecure.BLL.Services
                 return new LoginResponse
                 {
                     Success = false,
-                    Message = "Exception Error!",
+                    Message = "Invalid Email or Password",
                     Errors = new List<string> { ex.Message }
                 };
             }

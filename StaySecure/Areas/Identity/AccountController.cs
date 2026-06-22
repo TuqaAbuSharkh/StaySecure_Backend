@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using StaySecure.BLL.Services.IServices;
 using StaySecure.DAL.DTOs.Request;
 
@@ -30,6 +31,7 @@ namespace StaySecure.PL.Areas.Identity
 
 
         [HttpPost("Login")]
+        [EnableRateLimiting("GlobalPolicy")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var result = await _authenticationService.LoginAsync(request);
