@@ -149,5 +149,53 @@ namespace StaySecure.DAL.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Scenario>> GetScenariosByAgeGroupAsync( AgeGroupEnum ageGroup, LevelEnum level)
+        {
+            return await _context.Scenarios
+        .Include(x => x.Translations)
+        .Where(x => x.AgeGroup == ageGroup)
+        .OrderBy(x => x.Level)
+        .ThenBy(x => x.Id)
+        .ToListAsync();
+        }
+
+        public async Task<Scenario?> GetScenarioByIdAsync(int scenarioId)
+        {
+            return await _context.Scenarios
+                .Include(x => x.Translations)
+                .Include(x => x.Options)
+                    .ThenInclude(x => x.Translations)
+                .FirstOrDefaultAsync(x => x.Id == scenarioId);
+        }
+
+
+        public async Task<int> GetCompletedCountForLevelAsync(string userId, LevelEnum level)
+        {
+            return await _context.UserScenarios
+                .Join(
+                    _context.Scenarios,
+                    us => us.ScenarioId,
+                    s => s.Id,
+                    (us, s) => new { us, s })
+                .Where(x => x.us.UserId == userId &&x.s.Level == level &&!x.s.IsAiGenerated)
+                .CountAsync();
+        }
+
+        public async Task<int> GetUsedHintsCountForLevelAsync(string userId,LevelEnum level)
+        {
+            return await _context.UserScenarios
+                .Join(
+                    _context.Scenarios,
+                    us => us.ScenarioId,
+                    s => s.Id,
+                    (us, s) => new { us, s })
+                .Where(x =>x.us.UserId == userId &&
+                     x.s.Level == level &&
+                    !x.s.IsAiGenerated &&
+                     x.us.HintUsed)
+                .CountAsync();
+        }
+
+
     }
 }

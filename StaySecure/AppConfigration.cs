@@ -26,6 +26,9 @@ namespace StaySecure.PL
             Services.AddScoped<IDashBoardService, DashBoardService>();
 
             Services.AddScoped<IAiService, GeminiAiService>();
+            Services.AddScoped<IReportRepository, ReportRepository>();
+            Services.AddScoped<IReportService,ReportService>();
+
         }
     }
 }

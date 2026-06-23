@@ -26,5 +26,11 @@ namespace StaySecure.BLL.Services.IServices
         Task<ScenarioPlayResponse?> GetScenarioByIdAsync(int scenarioId, string lang);
 
 
+        Task<List<ScenarioOverviewResponse>>GetScenarioOverviewAsync(string userId,string lang);
+        Task<ScenarioPlayResponse?> GetScenarioByIdAsync(string userId,int scenarioId,string lang);
+
+
+
+
     }
 }

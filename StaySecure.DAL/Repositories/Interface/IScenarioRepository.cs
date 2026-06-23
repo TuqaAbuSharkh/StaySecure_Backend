@@ -31,5 +31,13 @@ namespace StaySecure.DAL.Repositories.Interface
         Task IncreaseWeakCategoryAsync( string userId, string category);
 
         Task<List<string>> GetTopWeakCategoriesAsync(string userId);
+
+        Task<List<Scenario>> GetScenariosByAgeGroupAsync(AgeGroupEnum ageGroup, LevelEnum level);
+
+        Task<Scenario?> GetScenarioByIdAsync(int scenarioId);
+
+        Task<int> GetCompletedCountForLevelAsync(string userId, LevelEnum level);
+
+        Task<int> GetUsedHintsCountForLevelAsync(string userId, LevelEnum level);
     }
 }

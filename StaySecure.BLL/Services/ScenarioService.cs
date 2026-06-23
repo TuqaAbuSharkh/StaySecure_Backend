@@ -170,21 +170,17 @@ namespace StaySecure.BLL.Services
                         .Select(x => x.ScenarioId)
                         .ToList());
 
-            // خلصت السيناريوهات الثابتة
             if (scenario == null)
             {
-                var requiredScore = 70;
 
-                if (user.TotalScore >= requiredScore)
+                var promoted =
+                    await CheckLevelProgressionAsync(user);
+
+                if (promoted)
                 {
-                    if (user.Level != LevelEnum.Advanced)
-                    {
-                        user.Level++;
-
-                        await _userManager.UpdateAsync(user);
-                    }
-
-                    return null;
+                    return await GetNextScenarioAsync(
+                        user.Id,
+                        lang);
                 }
 
                 // نقاط الضعف
@@ -202,7 +198,6 @@ namespace StaySecure.BLL.Services
                 if (aiScenario == null)
                     return null;
 
-                // حفظ السيناريو المولد
                 var generatedScenario = new Scenario
                 {
                     AgeGroup = user.AgeGroup,
@@ -215,15 +210,15 @@ namespace StaySecure.BLL.Services
                     HintPenalty = 1,
 
                     Translations = new List<ScenarioTranslation>
+        {
+            new ScenarioTranslation
             {
-                new ScenarioTranslation
-                {
-                    Language = "en",
-                    Title = aiScenario.Title,
-                    Description = aiScenario.Description,
-                    Category = aiScenario.Category
-                }
-            },
+                Language = "en",
+                Title = aiScenario.Title,
+                Description = aiScenario.Description,
+                Category = aiScenario.Category
+            }
+        },
 
                     Options = aiScenario.Options.Select(x =>
                         new ScenarioOption
@@ -233,10 +228,10 @@ namespace StaySecure.BLL.Services
                             Translations =
                             [
                                 new ScenarioOptionTranslation
-                        {
-                            Language = "en",
-                            Text = x.Text
-                        }
+                    {
+                        Language = "en",
+                        Text = x.Text
+                    }
                             ]
                         }).ToList()
                 };
@@ -270,6 +265,7 @@ namespace StaySecure.BLL.Services
                 };
             }
 
+
             var translation = scenario.Translations
                 .FirstOrDefault(x => x.Language == lang)
                 ?? scenario.Translations.First();
@@ -298,6 +294,52 @@ namespace StaySecure.BLL.Services
                 }).ToList()
             };
         }
+
+        private async Task<bool> CheckLevelProgressionAsync(ApplicationUser user)
+        {
+            var completedCount =
+                await _scenarioRepository
+                    .GetCompletedCountForLevelAsync(
+                        user.Id,
+                        user.Level);
+
+            var usedHints =
+                await _scenarioRepository
+                    .GetUsedHintsCountForLevelAsync(
+                        user.Id,
+                        user.Level);
+
+            if (user.Level == LevelEnum.Beginner)
+            {
+                if (completedCount >= 10 &&
+                    usedHints <= 3)
+                {
+                    user.Level =
+                        LevelEnum.Intermediate;
+
+                    await _userManager.UpdateAsync(user);
+
+                    return true;
+                }
+            }
+
+            if (user.Level == LevelEnum.Intermediate)
+            {
+                if (completedCount >= 10 &&
+                    usedHints <= 5)
+                {
+                    user.Level =
+                        LevelEnum.Advanced;
+
+                    await _userManager.UpdateAsync(user);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
 
         public async Task<SubmitScenarioResponse> SubmitScenarioAsync(string userId, SubmitScenarioRequest request)
         {
@@ -528,6 +570,123 @@ namespace StaySecure.BLL.Services
                 }).ToList()
             };
         }
+
+        public async Task<List<ScenarioOverviewResponse>> GetScenarioOverviewAsync(string userId, string lang)
+        {
+            var user =await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                return new();
+
+            var completed =await _scenarioRepository
+                    .GetUserScenariosAsync(userId);
+
+            var completedIds =
+                completed
+                    .Select(x => x.ScenarioId)
+                    .ToHashSet();
+
+            var scenarios =await _scenarioRepository
+                    .GetScenariosByAgeGroupAsync(
+                        user.AgeGroup,
+                        user.Level);
+
+            
+
+            int nextUnlockedId =
+                scenarios
+                    .Where(x => !completedIds.Contains(x.Id))
+                    .OrderBy(x => x.Id)
+                    .Select(x => x.Id)
+                    .FirstOrDefault();
+
+            return scenarios.Select(x =>
+            {
+                var translation =
+                    x.Translations
+                        .FirstOrDefault(t => t.Language == lang)
+                    ?? x.Translations.First();
+
+                return new ScenarioOverviewResponse
+                {
+                    Id = x.Id,
+                    Title = translation.Title,
+                    Category = translation.Category,
+                    Level = x.Level,
+                    IsCompleted =
+                        completedIds.Contains(x.Id),
+
+                    IsUnlocked =
+                        completedIds.Contains(x.Id)
+                        || x.Id == nextUnlockedId
+                };
+            }).ToList();
+        }
+
+        public async Task<ScenarioPlayResponse?> GetScenarioByIdAsync(string userId, int scenarioId, string lang)
+        {
+            try
+            {
+                var user =
+         await _userManager.FindByIdAsync(userId);
+
+                if (user == null)
+                    return null;
+
+                var scenario =
+                    await _scenarioRepository
+                        .GetScenarioByIdAsync(scenarioId);
+
+                if (scenario == null)
+                    return null;
+
+                // يمنع الوصول لسيناريوهات Age Group أخرى
+                if (scenario.AgeGroup != user.AgeGroup)
+                    return null;
+
+                var translation =
+                    scenario.Translations
+                        .FirstOrDefault(x => x.Language == lang)
+                    ?? scenario.Translations.First();
+
+                return new ScenarioPlayResponse
+                {
+                    Id = scenario.Id,
+                    Title = translation.Title,
+                    Description = translation.Description,
+                    Category = translation.Category,
+                    Score = scenario.Score,
+                    Hint = scenario.Hint,
+                    HintPenalty = scenario.HintPenalty,
+
+                    Options = scenario.Options
+                        .Select(o =>
+                        {
+                            var optionTranslation =
+                                o.Translations
+                                    .FirstOrDefault(x => x.Language == lang)
+                                ?? o.Translations.First();
+
+                            return new OptionResponse
+                            {
+                                Id = o.Id,
+                                Text = optionTranslation.Text
+                            };
+                        })
+                        .ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ScenarioPlayResponse
+                {
+                    Title = ex.Message
+                };
+            }
+
+
+        }
+
 
     }
 }

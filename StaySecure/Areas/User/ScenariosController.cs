@@ -71,8 +71,42 @@ namespace StaySecure.PL.Areas.User
         }
 
 
-        
+        [HttpGet("overview")]
+        public async Task<IActionResult>GetScenarioOverview(string lang = "en")
+        {
+            var userId =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+            var result =
+                await _scenarioService
+                    .GetScenarioOverviewAsync(
+                        userId,
+                        lang);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{scenarioId}")]
+        public async Task<IActionResult> GetScenarioById(int scenarioId,string lang = "en")
+        {
+            var userId =
+                   User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result =
+                await _scenarioService
+                    .GetScenarioByIdAsync(
+                        userId,
+                        scenarioId,
+                        lang);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
 
     }
 }
