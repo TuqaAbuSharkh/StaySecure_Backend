@@ -1,4 +1,5 @@
-﻿using StaySecure.DAL.DTOs.Response.Reports;
+﻿using StaySecure.DAL.DTOs.Response;
+using StaySecure.DAL.DTOs.Response.Reports;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace StaySecure.BLL.Services.IServices
 
 
         Task<AwarenessReportResponse> GetAwarenessReportAsync();
+
+        Task<DailyTipResponse?>GetDailyTipAsync(string userId);
 
 
     }

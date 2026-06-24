@@ -205,6 +205,25 @@ namespace StaySecure.DAL.Repositories
     };
         }
 
+        public async Task<UserDailyTip?>GetTodayTipAsync(string userId)
+        {
+            var today = DateTime.UtcNow.Date;
+
+            return await _context.UserDailyTips
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId &&
+                    x.GeneratedDate.Date == today);
+        }
+
+
+        public async Task AddDailyTipAsync(UserDailyTip tip)
+        {
+            await _context.UserDailyTips
+                .AddAsync(tip);
+
+            await _context.SaveChangesAsync();
+        }
+
 
     }
 }

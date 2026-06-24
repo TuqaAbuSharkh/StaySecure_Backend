@@ -25,6 +25,64 @@ namespace StaySecure.BLL.Services
             _apiKey = configuration["Gemini:ApiKey"]!;
         }
 
+        public async Task<string?> GenerateDailyTipAsync(string category)
+        {
+            var prompt = $@"
+You are a cybersecurity awareness trainer.
+
+Generate one personalized cybersecurity tip for a student.
+
+Weak category: {category}
+
+Requirements:
+- Maximum 20 words.
+- Focus only on {category}.
+- Practical and actionable.
+- Suitable for non-technical students.
+- One sentence only.
+- No title.
+- No bullet points.
+- No quotation marks.
+- Return only the tip text.
+";
+            var requestBody = new
+            {
+                contents = new[]
+                {
+            new
+            {
+                parts = new[]
+                {
+                    new
+                    {
+                        text = prompt
+                    }
+                }
+            }
+        }
+            };
+
+            var response = await _httpClient.PostAsJsonAsync(
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}",
+                requestBody);
+
+            var json =
+                await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            using var document =
+                JsonDocument.Parse(json);
+
+            return document.RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString();
+        }
+
         public async Task<string> GenerateFeedbackAsync(string scenarioTitle, bool isCorrect)
         {
             var prompt =

@@ -1,4 +1,6 @@
-﻿using StaySecure.DAL.DTOs.Response.Reports;
+﻿using StaySecure.DAL.DTOs.Response;
+using StaySecure.DAL.DTOs.Response.Reports;
+using StaySecure.DAL.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +18,9 @@ namespace StaySecure.DAL.Repositories.Interface
         Task<double> GetOverallAwarenessAsync();
         Task<string> GetStrongestAgeGroupAsync();
         Task<List<AgeGroupPerformanceResponse>>GetAgeGroupPerformanceAsync();
+        Task<UserDailyTip?> GetTodayTipAsync(string userId);
+
+        Task AddDailyTipAsync(UserDailyTip tip);
 
     }
 }

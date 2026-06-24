@@ -35,6 +35,7 @@ namespace StaySecure.DAL.Data
         public DbSet<UserScenario> UserScenarios { get; set; }
 
         public DbSet<UserWeakCategory> UserWeakCategories { get; set; }
+        public DbSet<UserDailyTip> UserDailyTips { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

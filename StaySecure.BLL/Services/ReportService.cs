@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using StaySecure.BLL.Services.IServices;
+using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.DTOs.Response.Reports;
 using StaySecure.DAL.Models;
 using StaySecure.DAL.Repositories.Interface;
@@ -10,15 +11,19 @@ namespace StaySecure.BLL.Services
     {
         private readonly IReportRepository _reportRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IScenarioRepository _scenarioRepository;
+        private readonly IAiService _aiService;
 
-        public ReportService(
-            IReportRepository reportRepository,
-            UserManager<ApplicationUser> userManager)
+        public ReportService( IReportRepository reportRepository,
+            UserManager<ApplicationUser> userManager,
+            IScenarioRepository scenarioRepository,
+            IAiService aiService)
         {
             _reportRepository = reportRepository;
             _userManager = userManager;
+            _scenarioRepository = scenarioRepository;
+            _aiService = aiService;
         }
-
         public async Task<List<TopicStatisticsResponse>>
             GetTopicStatisticsAsync()
         {
@@ -26,8 +31,7 @@ namespace StaySecure.BLL.Services
                 .GetTopicStatisticsAsync();
         }
 
-        public async Task<AwarenessReportResponse>
-            GetAwarenessReportAsync()
+        public async Task<AwarenessReportResponse>  GetAwarenessReportAsync()
         {
             var topicStatistics = await _reportRepository.GetTopicStatisticsAsync();
 
@@ -77,5 +81,59 @@ namespace StaySecure.BLL.Services
                     .ToList()
             };
         }
+
+
+        public async Task<DailyTipResponse?>GetDailyTipAsync(string userId)
+        {
+            var todayTip =
+                await _reportRepository
+                    .GetTodayTipAsync(userId);
+
+            if (todayTip != null)
+            {
+                return new DailyTipResponse
+                {
+                    Tip = todayTip.Tip,
+                    Category = todayTip.Category,
+                    GeneratedDate =
+                        todayTip.GeneratedDate
+                };
+            }
+
+            var weakCategories =
+                await _scenarioRepository
+                    .GetTopWeakCategoriesAsync(userId);
+
+            var category =
+                weakCategories.FirstOrDefault()
+                ?? "General Cybersecurity";
+
+            var generatedTip =
+                await _aiService
+                    .GenerateDailyTipAsync(category);
+
+            if (string.IsNullOrWhiteSpace(generatedTip))
+                return null;
+
+            var newTip = new UserDailyTip
+            {
+                UserId = userId,
+                Category = category,
+                Tip = generatedTip,
+                GeneratedDate = DateTime.UtcNow
+            };
+
+            await _reportRepository
+                .AddDailyTipAsync(newTip);
+
+            return new DailyTipResponse
+            {
+                Tip = newTip.Tip,
+                Category = newTip.Category,
+                GeneratedDate =
+                    newTip.GeneratedDate
+            };
+        }
+
     }
 }
