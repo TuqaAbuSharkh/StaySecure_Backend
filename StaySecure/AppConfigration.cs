@@ -29,6 +29,12 @@ namespace StaySecure.PL
             Services.AddScoped<IReportRepository, ReportRepository>();
             Services.AddScoped<IReportService,ReportService>();
 
+
+
+            Services.AddScoped< IChallengeRepository,ChallengeRepository>();
+
+            Services.AddScoped<IChallengeService,ChallengeService>();
+
         }
     }
 }

@@ -299,47 +299,34 @@ namespace StaySecure.BLL.Services
         {
             var completedCount =
                 await _scenarioRepository
-                    .GetCompletedCountForLevelAsync(
-                        user.Id,
-                        user.Level);
+                    .GetCompletedCountForLevelAsync(user.Id, user.Level);
 
             var usedHints =
                 await _scenarioRepository
-                    .GetUsedHintsCountForLevelAsync(
-                        user.Id,
-                        user.Level);
+                    .GetUsedHintsCountForLevelAsync(user.Id, user.Level);
 
             if (user.Level == LevelEnum.Beginner)
             {
-                if (completedCount >= 10 &&
-                    usedHints <= 3)
+                if (completedCount >= 10 && usedHints <= 3)
                 {
-                    user.Level =
-                        LevelEnum.Intermediate;
-
+                    user.Level = LevelEnum.Intermediate;
                     await _userManager.UpdateAsync(user);
-
                     return true;
                 }
             }
 
             if (user.Level == LevelEnum.Intermediate)
             {
-                if (completedCount >= 10 &&
-                    usedHints <= 5)
+                if (completedCount >= 10 && usedHints <= 5)
                 {
-                    user.Level =
-                        LevelEnum.Advanced;
-
+                    user.Level = LevelEnum.Advanced;
                     await _userManager.UpdateAsync(user);
-
                     return true;
                 }
             }
 
             return false;
         }
-
 
         public async Task<SubmitScenarioResponse> SubmitScenarioAsync(string userId, SubmitScenarioRequest request)
         {

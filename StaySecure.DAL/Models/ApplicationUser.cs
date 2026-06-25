@@ -41,6 +41,7 @@ namespace StaySecure.DAL.Models
 
         public LevelEnum Level { get; set; } = 0;
 
+        public bool ChallengesUnlocked { get; set; } = false;
 
         public string? CodeResetPassword { get; set; }
         public DateTime? PasswordResetCodeExpiry { get; set; }

@@ -91,8 +91,7 @@ namespace StaySecure.DAL.Repositories
         .FirstOrDefaultAsync(x => x.Id == optionId);
         }
 
-        public async Task AddUserScenarioAsync(
-    UserScenario userScenario)
+        public async Task AddUserScenarioAsync(UserScenario userScenario)
         {
             await _context.UserScenarios.AddAsync(userScenario);
 

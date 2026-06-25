@@ -16,7 +16,7 @@ namespace StaySecure.BLL.Services.IServices
 
         Task<string?> GenerateDailyTipAsync( string category);
 
-
+        Task<AiChallengeDto?> GenerateChallengeAsync();
 
     }
 }
