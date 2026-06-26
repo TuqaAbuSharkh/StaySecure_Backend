@@ -30,6 +30,7 @@ namespace StaySecure.PL.Areas.Identity
         }
 
 
+
         [HttpPost("Login")]
         [EnableRateLimiting("GlobalPolicy")]
         public async Task<IActionResult> Login(LoginRequest request)
@@ -50,11 +51,13 @@ namespace StaySecure.PL.Areas.Identity
                 Expires = DateTime.UtcNow.AddDays(7)
             });
 
-            result.RefreshToken = null; 
+            result.RefreshToken = null;
 
             return Ok(result);
-
         }
+
+
+
 
         [HttpGet("ConfirmEmail")] 
         public async Task<IActionResult> ConfirmEmail(string token, string userId)
@@ -67,6 +70,8 @@ namespace StaySecure.PL.Areas.Identity
             return Ok("Email confirmed successfully");
         }
 
+
+
         [HttpPost("Verify2FA")]
         public async Task<IActionResult> Verify2FA([FromBody] TwoFactorRequest request)
         {
@@ -74,12 +79,15 @@ namespace StaySecure.PL.Areas.Identity
 
             if (!result.Success)
                 return BadRequest(result);
-
+            if (string.IsNullOrWhiteSpace(result.RefreshToken))
+            {
+                return BadRequest("Refresh token is NULL.");
+            }
             Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(7)
             });
 
@@ -88,12 +96,16 @@ namespace StaySecure.PL.Areas.Identity
             return Ok(result);
         }
 
+
+
         [HttpPost("Enable2FA")]
         public async Task<IActionResult> Enable2FA([FromQuery] string userId)
         {
             var result = await _authenticationService.Enable2FAAsync(userId);
             return Ok(result);
         }
+
+
 
         [HttpPost("Confirm2FA")]
         public async Task<IActionResult> Confirm2FA([FromBody] TwoFactorRequest request)
@@ -106,6 +118,8 @@ namespace StaySecure.PL.Areas.Identity
             return Ok(result);
         }
 
+
+
         [HttpPost("SendCode")]
         public async Task<IActionResult> RequestPassworsReset(ForgetPasswordRequest request)
         {
@@ -117,6 +131,8 @@ namespace StaySecure.PL.Areas.Identity
             return Ok(result);
         }
 
+
+
         [HttpPatch("PasswordReset")]
         public async Task<IActionResult> PassworsReset(ResetPasswordRequest request)
         {
@@ -127,6 +143,9 @@ namespace StaySecure.PL.Areas.Identity
             }
             return Ok(result);
         }
+
+
+
 
         [HttpPatch("RefreshToken")]
         public async Task<IActionResult> RefreshToken(TokenApiModel request)
@@ -148,6 +167,9 @@ namespace StaySecure.PL.Areas.Identity
 
             return Ok(result);
         }
+
+
+
 
         [HttpPost("Logout")]
         public async Task<IActionResult> Logout()

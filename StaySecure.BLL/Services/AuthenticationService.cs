@@ -210,19 +210,19 @@ namespace StaySecure.BLL.Services
             var refreshToken = _tokenService.GenerateRefreshToken();
 
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+
             await _userManager.UpdateAsync(user);
 
             await LogLoginAttempt(user.Id, user.Email, true, ipAddress, null);
 
-           
             return new LoginResponse
             {
                 Success = true,
                 Message = "Login Successfully",
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                UserId = user.Id,
+                UserId = user.Id
             };
         }
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
@@ -370,36 +370,69 @@ namespace StaySecure.BLL.Services
 
         public async Task<LoginResponse> RefreshTokenAsync(TokenApiModel request)
         {
-            string accessToken = request.AccessToken;
-            var refreshToken = _httpContextAccessor.HttpContext.Request.Cookies["refreshToken"];
+            var accessToken = request.AccessToken;
+            var refreshToken = _httpContextAccessor.HttpContext?.Request.Cookies["refreshToken"];
 
-            var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
-            var username = principal.Identity.Name;
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.UserName == username);
-
-            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            if (string.IsNullOrWhiteSpace(accessToken) ||
+                string.IsNullOrWhiteSpace(refreshToken))
             {
-                return new LoginResponse()
+                return new LoginResponse
                 {
                     Success = false,
-                    Message = "invalid client request "
+                    Message = "Access token or refresh token is missing."
                 };
             }
+
+            var principal = _tokenService.GetPrincipalFromExpiredToken(accessToken);
+
+            if (principal?.Identity?.Name == null)
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Invalid access token."
+                };
+            }
+
+            var username = principal.Identity.Name;
+
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(x => x.UserName == username);
+
+            if (user == null)
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "User not found."
+                };
+            }
+
+            if (user.RefreshToken != refreshToken ||
+                user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Invalid refresh token."
+                };
+            }
+
             var newAccessToken = await _tokenService.GenerateAccessToken(user);
             var newRefreshToken = _tokenService.GenerateRefreshToken();
+
             user.RefreshToken = newRefreshToken;
+
             await _userManager.UpdateAsync(user);
 
-
-            return new LoginResponse()
+            return new LoginResponse
             {
                 Success = true,
-                Message = "Token Refreshed ",
+                Message = "Token refreshed successfully.",
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken
             };
         }
-
         public async Task<bool> LogoutAsync(string userName)
         {
             var user = await _userManager.FindByNameAsync(userName);
