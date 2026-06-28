@@ -15,7 +15,6 @@ namespace StaySecure.DAL.Models
 
         public int Score { get; set; }
 
-        public string? Hint { get; set; }
 
         public int HintPenalty { get; set; } = 0;
 

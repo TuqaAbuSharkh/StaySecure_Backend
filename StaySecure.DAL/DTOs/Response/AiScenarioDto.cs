@@ -14,6 +14,8 @@ namespace StaySecure.DAL.DTOs.Response
 
         public string Category { get; set; }
 
+        public string Hint { get; set; }
+
         public List<AiOptionDto> Options { get; set; }
     }
 }

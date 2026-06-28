@@ -13,6 +13,7 @@ namespace StaySecure.DAL.Models
         public string Description { get; set; }
 
         public string Category { get; set; }
+        public string Hint { get; set; }
 
         public string Language { get; set; } = "en";
 

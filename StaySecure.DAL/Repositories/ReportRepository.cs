@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using StaySecure.DAL.Data;
+using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.DTOs.Response.Reports;
 using StaySecure.DAL.Models;
 using StaySecure.DAL.Repositories.Interface;
@@ -205,14 +206,15 @@ namespace StaySecure.DAL.Repositories
     };
         }
 
-        public async Task<UserDailyTip?>GetTodayTipAsync(string userId)
+        public async Task<UserDailyTip?> GetTodayTipAsync(string userId, string lang)
         {
             var today = DateTime.UtcNow.Date;
 
             return await _context.UserDailyTips
                 .FirstOrDefaultAsync(x =>
-                    x.UserId == userId &&
-                    x.GeneratedDate.Date == today);
+                   x.UserId == userId &&
+x.Language == lang &&
+x.GeneratedDate.Date == today);
         }
 
 
@@ -224,6 +226,25 @@ namespace StaySecure.DAL.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task<HomeStatisticsResponse> GetHomeStatisticsAsync()
+        {
+            return new HomeStatisticsResponse
+            {
+                Scenarios = await _context.Scenarios.CountAsync(),
 
+                UsersTrained = await _context.Users.CountAsync(),
+
+                ThreatTypes = await _context.ScenarioTranslations
+                    .Select(x => x.Category)
+                    .Distinct()
+                    .CountAsync(),
+
+                DecisionsAnalyzed = await _context.UserScenarios.CountAsync(),
+
+                UserSatisfaction = 95,
+
+                Availability = "24/7"
+            };
+        }
     }
 }

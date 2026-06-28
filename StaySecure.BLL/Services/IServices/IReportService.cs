@@ -15,8 +15,11 @@ namespace StaySecure.BLL.Services.IServices
 
         Task<AwarenessReportResponse> GetAwarenessReportAsync();
 
-        Task<DailyTipResponse?>GetDailyTipAsync(string userId);
+        Task<DailyTipResponse?> GetDailyTipAsync(string userId, string lang);
 
+
+
+        Task<HomeStatisticsResponse> GetHomeStatisticsAsync();
 
     }
 

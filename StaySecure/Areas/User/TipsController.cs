@@ -20,24 +20,18 @@ namespace StaySecure.PL.Areas.User
         }
 
         [HttpGet("daily")]
-        public async Task<IActionResult>
-            GetDailyTip()
+        public async Task<IActionResult> GetDailyTip([FromQuery] string lang = "en")
         {
-            var userId =
-                User.FindFirst(ClaimTypes.NameIdentifier)
-                    ?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
-            var result =
-                await _reportService
-                    .GetDailyTipAsync(userId);
-
-            if (result == null)
-                return NotFound();
+            var result = await _reportService.GetDailyTipAsync(userId, lang);
 
             return Ok(result);
         }
+
+
     }
 }

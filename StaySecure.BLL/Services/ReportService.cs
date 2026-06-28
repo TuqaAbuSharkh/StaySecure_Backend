@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using StaySecure.BLL.Services.IServices;
 using StaySecure.DAL.DTOs.Response;
 using StaySecure.DAL.DTOs.Response.Reports;
@@ -83,11 +84,9 @@ namespace StaySecure.BLL.Services
         }
 
 
-        public async Task<DailyTipResponse?>GetDailyTipAsync(string userId)
+        public async Task<DailyTipResponse?> GetDailyTipAsync(string userId, string lang)
         {
-            var todayTip =
-                await _reportRepository
-                    .GetTodayTipAsync(userId);
+            var todayTip =  await _reportRepository.GetTodayTipAsync(userId, lang);
 
             if (todayTip != null)
             {
@@ -95,8 +94,7 @@ namespace StaySecure.BLL.Services
                 {
                     Tip = todayTip.Tip,
                     Category = todayTip.Category,
-                    GeneratedDate =
-                        todayTip.GeneratedDate
+                    GeneratedDate = todayTip.GeneratedDate
                 };
             }
 
@@ -110,7 +108,7 @@ namespace StaySecure.BLL.Services
 
             var generatedTip =
                 await _aiService
-                    .GenerateDailyTipAsync(category);
+                    .GenerateDailyTipAsync(category, lang);
 
             if (string.IsNullOrWhiteSpace(generatedTip))
                 return null;
@@ -120,20 +118,32 @@ namespace StaySecure.BLL.Services
                 UserId = userId,
                 Category = category,
                 Tip = generatedTip,
+                Language = lang,
                 GeneratedDate = DateTime.UtcNow
             };
 
-            await _reportRepository
-                .AddDailyTipAsync(newTip);
+            await _reportRepository.AddDailyTipAsync(newTip);
 
             return new DailyTipResponse
             {
                 Tip = newTip.Tip,
                 Category = newTip.Category,
-                GeneratedDate =
-                    newTip.GeneratedDate
+                GeneratedDate = newTip.GeneratedDate
             };
         }
+
+
+
+        public async Task<HomeStatisticsResponse> GetHomeStatisticsAsync()
+        {
+            return await _reportRepository.GetHomeStatisticsAsync();
+        }
+
+
+
+
+
+
 
     }
 }

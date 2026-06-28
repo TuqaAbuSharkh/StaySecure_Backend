@@ -35,6 +35,7 @@ namespace StaySecure.PL
 
             Services.AddScoped<IChallengeService,ChallengeService>();
 
+            Services.AddMemoryCache();
         }
     }
 }

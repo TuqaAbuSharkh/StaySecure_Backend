@@ -28,25 +28,22 @@ namespace StaySecure.BLL.Services
             _apiKey = configuration["Gemini:ApiKey"]!;
         }
 
-        public async Task<string?> GenerateDailyTipAsync(string category)
+        public async Task<string?> GenerateDailyTipAsync(string category, string lang)
         {
             var prompt = $@"
-You are a cybersecurity awareness trainer.
-
-Generate one personalized cybersecurity tip for a student.
+Generate ONE cybersecurity awareness tip.
 
 Weak category: {category}
 
+Language: {lang}
+
 Requirements:
-- Maximum 20 words.
-- Focus only on {category}.
-- Practical and actionable.
-- Suitable for non-technical students.
-- One sentence only.
-- No title.
-- No bullet points.
-- No quotation marks.
-- Return only the tip text.
+- Maximum 25 words.
+- Easy language.
+- Practical advice.
+- If Language is Arabic, write in Modern Standard Arabic.
+- If Language is English, write in English.
+- Return ONLY the tip text.
 ";
             var requestBody = new
             {
@@ -143,7 +140,12 @@ Level: {level}
 Focus on these weak topics:
 {string.Join(", ", weakTopics)}
 
-Return ONLY valid JSON.
+Requirements:
+- Generate one realistic cybersecurity scenario.
+- Include a short hint that helps the user think without revealing the correct answer.
+- Return exactly FOUR answer choices.
+- Only ONE answer is correct.
+- Return ONLY valid JSON.
 
 Example:
 
@@ -151,27 +153,27 @@ Example:
   ""title"": ""Suspicious Email"",
   ""description"": ""You receive an email asking for your password."",
   ""category"": ""Phishing"",
+  ""hint"": ""Verify the sender before taking any action."",
   ""options"": [
     {{
-      ""text"": ""Send password"",
+      ""text"": ""Send your password"",
       ""isCorrect"": false
     }},
     {{
-      ""text"": ""Verify sender"",
+      ""text"": ""Verify the sender before responding"",
       ""isCorrect"": true
     }},
     {{
-      ""text"": ""Ignore antivirus"",
+      ""text"": ""Disable antivirus"",
       ""isCorrect"": false
     }},
     {{
-      ""text"": ""Forward password"",
+      ""text"": ""Forward your password"",
       ""isCorrect"": false
     }}
   ]
 }}
 ";
-
             var requestBody = new
             {
                 contents = new[]
@@ -383,6 +385,69 @@ Example:
             }
         }
 
+        public async Task<string?> GenerateChallengeFeedbackAsync(
+            string title,
+            string description,
+            bool isCorrect)
+        {
+            var prompt = $@"
+Challenge:
 
+Title:
+{title}
+
+Description:
+{description}
+
+The student's answer was {(isCorrect ? "correct" : "incorrect")}.
+
+Generate educational cybersecurity feedback.
+
+Requirements:
+
+- Maximum 40 words.
+- Friendly.
+- Explain briefly why the answer is {(isCorrect ? "correct" : "incorrect")}.
+- Give one cybersecurity recommendation.
+- Return ONLY the feedback.
+";
+
+            var requestBody = new
+            {
+                contents = new[]
+                            {
+            new
+            {
+                parts = new[]
+                {
+                    new
+                    {
+                        text = prompt
+                    }
+                }
+            }
+        }
+            };
+
+            var response = await _httpClient.PostAsJsonAsync(
+                $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}",
+                requestBody);
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                return json;
+
+            using var document = JsonDocument.Parse(json);
+
+            return document
+                .RootElement
+                .GetProperty("candidates")[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString()
+                ?? "No feedback generated";
+        }
     }
 }

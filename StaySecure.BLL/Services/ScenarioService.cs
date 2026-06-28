@@ -75,7 +75,6 @@ namespace StaySecure.BLL.Services
                 Level = request.Level,
                 Score = request.Score,
                 CreatedAt = DateTime.UtcNow,
-                Hint = request.Hint,
                 HintPenalty = request.HintPenalty,
 
                 Translations = request.Translations.Select(t => new ScenarioTranslation
@@ -83,7 +82,9 @@ namespace StaySecure.BLL.Services
                     Title = t.Title,
                     Description = t.Description,
                     Category = t.Category,
-                    Language = t.Language
+                    Language = t.Language,
+                    Hint = t.Hint
+
                 }).ToList(),
 
                 Options = request.Options.Select(o => new ScenarioOption
@@ -152,7 +153,7 @@ namespace StaySecure.BLL.Services
             }).ToList();
         }
 
-        public async Task<ScenarioPlayResponse?> GetNextScenarioAsync( string userId, string lang)
+        public async Task<ScenarioPlayResponse?> GetNextScenarioAsync(string userId, string lang)
         {
             var user = await _userManager.FindByIdAsync(userId);
 
@@ -172,7 +173,6 @@ namespace StaySecure.BLL.Services
 
             if (scenario == null)
             {
-
                 var promoted =
                     await CheckLevelProgressionAsync(user);
 
@@ -201,43 +201,45 @@ namespace StaySecure.BLL.Services
                 var generatedScenario = new Scenario
                 {
                     AgeGroup = user.AgeGroup,
+
                     Level = user.Level,
 
                     IsAiGenerated = true,
 
                     Score = 5,
-                    Hint = "Think carefully before acting.",
+
                     HintPenalty = 1,
 
                     Translations = new List<ScenarioTranslation>
-        {
-            new ScenarioTranslation
             {
-                Language = "en",
-                Title = aiScenario.Title,
-                Description = aiScenario.Description,
-                Category = aiScenario.Category
-            }
-        },
+                new ScenarioTranslation
+                {
+                    Language = "en",
+                    Title = aiScenario.Title,
+                    Description = aiScenario.Description,
+                    Category = aiScenario.Category,
+                    Hint = aiScenario.Hint
+                }
+            },
 
-                    Options = aiScenario.Options.Select(x =>
-                        new ScenarioOption
+                    Options = aiScenario.Options
+                        .Select(x => new ScenarioOption
                         {
                             IsCorrect = x.IsCorrect,
 
-                            Translations =
-                            [
-                                new ScenarioOptionTranslation
-                    {
-                        Language = "en",
-                        Text = x.Text
-                    }
-                            ]
-                        }).ToList()
+                            Translations = new List<ScenarioOptionTranslation>
+                            {
+                        new ScenarioOptionTranslation
+                        {
+                            Language = "en",
+                            Text = x.Text
+                        }
+                            }
+                        })
+                        .ToList()
                 };
 
-                await _scenarioRepository.AddAsync(
-                    generatedScenario);
+                await _scenarioRepository.AddAsync(generatedScenario);
 
                 return new ScenarioPlayResponse
                 {
@@ -251,7 +253,7 @@ namespace StaySecure.BLL.Services
 
                     Score = generatedScenario.Score,
 
-                    Hint = generatedScenario.Hint,
+                    Hint = generatedScenario.Translations.First().Hint,
 
                     HintPenalty = generatedScenario.HintPenalty,
 
@@ -265,7 +267,6 @@ namespace StaySecure.BLL.Services
                 };
             }
 
-
             var translation = scenario.Translations
                 .FirstOrDefault(x => x.Language == lang)
                 ?? scenario.Translations.First();
@@ -273,28 +274,38 @@ namespace StaySecure.BLL.Services
             return new ScenarioPlayResponse
             {
                 Id = scenario.Id,
+
                 Title = translation.Title,
+
                 Description = translation.Description,
+
                 Category = translation.Category,
+
+                Hint = translation.Hint,
+
                 Score = scenario.Score,
-                Hint = scenario.Hint,
+
                 HintPenalty = scenario.HintPenalty,
 
-                Options = scenario.Options.Select(o =>
-                {
-                    var optionTranslation = o.Translations
-                        .FirstOrDefault(x => x.Language == lang)
-                        ?? o.Translations.First();
-
-                    return new OptionResponse
+                Options = scenario.Options
+                    .Select(o =>
                     {
-                        Id = o.Id,
-                        Text = optionTranslation.Text
-                    };
-                }).ToList()
+                        var optionTranslation = o.Translations
+                            .FirstOrDefault(x => x.Language == lang)
+                            ?? o.Translations.First();
+
+                        return new OptionResponse
+                        {
+                            Id = o.Id,
+                            Text = optionTranslation.Text
+                        };
+                    })
+                    .ToList()
             };
         }
 
+
+       
         private async Task<bool> CheckLevelProgressionAsync(ApplicationUser user)
         {
             var completedCount =
@@ -328,7 +339,9 @@ namespace StaySecure.BLL.Services
             return false;
         }
 
-        public async Task<SubmitScenarioResponse> SubmitScenarioAsync(string userId, SubmitScenarioRequest request)
+        public async Task<SubmitScenarioResponse> SubmitScenarioAsync(
+            string userId,
+            SubmitScenarioRequest request)
         {
             var user = await _userManager.FindByIdAsync(userId);
 
@@ -353,9 +366,26 @@ namespace StaySecure.BLL.Services
                 };
             }
 
+            var existingScenario =
+                await _scenarioRepository.GetUserScenarioAsync(
+                    userId,
+                    request.ScenarioId);
+
+            if (existingScenario != null)
+            {
+                return new SubmitScenarioResponse
+                {
+                    Success = true,
+                    Message = "Scenario already completed.",
+                    IsCorrect = existingScenario.IsCorrect,
+                    Feedback = existingScenario.IsCorrect
+                        ? "You have already completed this scenario successfully."
+                        : "You have already attempted this scenario."
+                };
+            }
+
             var option =
-                await _scenarioRepository.GetOptionByIdAsync(
-                    request.OptionId);
+                await _scenarioRepository.GetOptionByIdAsync(request.OptionId);
 
             if (option == null)
             {
@@ -367,6 +397,7 @@ namespace StaySecure.BLL.Services
             }
 
             var isCorrect = option.IsCorrect;
+
             if (!isCorrect)
             {
                 var category = scenario.Translations.First().Category;
@@ -375,7 +406,9 @@ namespace StaySecure.BLL.Services
                     userId,
                     category);
             }
+
             var title = scenario.Translations.FirstOrDefault()?.Title ?? "";
+
             string feedback = "";
 
             try
@@ -388,6 +421,7 @@ namespace StaySecure.BLL.Services
             {
                 feedback = ex.ToString();
             }
+
             await _scenarioRepository.AddUserScenarioAsync(
                 new UserScenario
                 {
@@ -406,9 +440,7 @@ namespace StaySecure.BLL.Services
                     earnedScore -= scenario.HintPenalty;
 
                     if (earnedScore < 0)
-                    {
                         earnedScore = 0;
-                    }
                 }
 
                 user.TotalScore += earnedScore;
@@ -420,13 +452,12 @@ namespace StaySecure.BLL.Services
             {
                 Success = true,
                 Message = isCorrect
-         ? "Correct answer"
-         : "Wrong answer",
+                    ? "Correct answer"
+                    : "Wrong answer",
                 IsCorrect = isCorrect,
                 Feedback = feedback
             };
         }
-
         public async Task<BaseRespose> UpdateScenarioAsync(UpdateScenarioRequest request)
         {
             var errors = new List<string>();
@@ -471,8 +502,8 @@ namespace StaySecure.BLL.Services
             }
 
             scenario.Level = request.Level;
+            scenario.AgeGroup = request.AgeGroup;
             scenario.Score = request.Score;
-            scenario.Hint = request.Hint;
             scenario.HintPenalty = request.HintPenalty;
 
             scenario.Translations.Clear();
@@ -481,6 +512,7 @@ namespace StaySecure.BLL.Services
                 Title = t.Title,
                 Description = t.Description,
                 Category = t.Category,
+                Hint=t.Hint,
                 Language = t.Language
             }).ToList();
 
@@ -515,7 +547,7 @@ namespace StaySecure.BLL.Services
 
             return new HintResponse
             {
-                Hint = scenario.Hint,
+                Hint = scenario.Translations.First().Hint,
                 HintPenalty = scenario.HintPenalty
             };
         }
@@ -540,8 +572,9 @@ namespace StaySecure.BLL.Services
                 Description = translation.Description,
                 Category = translation.Category,
                 Score = scenario.Score,
-                Hint = scenario.Hint,
+                Hint = translation.Hint,
                 HintPenalty = scenario.HintPenalty,
+                
 
                 Options = scenario.Options.Select(o =>
                 {
@@ -552,7 +585,8 @@ namespace StaySecure.BLL.Services
                     return new OptionResponse
                     {
                         Id = o.Id,
-                        Text = optionTranslation.Text
+                        Text = optionTranslation.Text,
+                        IsCorrect = o.IsCorrect
                     };
                 }).ToList()
             };
@@ -643,7 +677,7 @@ namespace StaySecure.BLL.Services
                     Description = translation.Description,
                     Category = translation.Category,
                     Score = scenario.Score,
-                    Hint = scenario.Hint,
+                    Hint = translation.Hint,
                     HintPenalty = scenario.HintPenalty,
 
                     Options = scenario.Options

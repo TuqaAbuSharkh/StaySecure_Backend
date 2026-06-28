@@ -4,15 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StaySecure.DAL.DTOs.Request
+namespace StaySecure.DAL.DTOs.Response
 {
-    public class ScenarioTranslationDto
+    public class ChallengeCacheDto
     {
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string Category { get; set; }
-        public string Language { get; set; }
-        public string Hint { get; set; }
+        public int CorrectAnswerId { get; set; }
 
+        public string Title { get; set; }
+
+        public string Description { get; set; }
+
+        public string Category { get; set; }
     }
 }

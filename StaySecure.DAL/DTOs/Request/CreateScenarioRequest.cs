@@ -14,7 +14,6 @@ namespace StaySecure.DAL.DTOs.Request
         public LevelEnum Level { get; set; }
         public int Score { get; set; }
 
-        public string? Hint { get; set; }
 
         public int HintPenalty { get; set; }
         public List<ScenarioTranslationDto> Translations { get; set; }

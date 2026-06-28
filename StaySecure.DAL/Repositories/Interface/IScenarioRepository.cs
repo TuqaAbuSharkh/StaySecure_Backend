@@ -39,5 +39,7 @@ namespace StaySecure.DAL.Repositories.Interface
         Task<int> GetCompletedCountForLevelAsync(string userId, LevelEnum level);
 
         Task<int> GetUsedHintsCountForLevelAsync(string userId, LevelEnum level);
+
+        Task<UserScenario?> GetUserScenarioAsync(string userId, int scenarioId);
     }
 }

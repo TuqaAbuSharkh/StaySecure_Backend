@@ -28,14 +28,16 @@ namespace StaySecure
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy(name: MyAllowSpecificOrigins,
-                                  policy =>
-                                  {
-                                      policy.WithOrigins("http://localhost:5174")
-                                                        .AllowAnyHeader()
-                                                        .AllowAnyMethod()
-                                                        .AllowCredentials();
-                                  });
+                options.AddPolicy(MyAllowSpecificOrigins, policy =>
+                {
+                    policy.WithOrigins(
+                            "http://localhost:5174",
+                            "https://stay-secure.netlify.app"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
             });
             // Add services to the container.
 

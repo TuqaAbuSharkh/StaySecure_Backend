@@ -14,9 +14,11 @@ namespace StaySecure.BLL.Services.IServices
 
         Task<AiScenarioDto?> GenerateScenarioAsync(List<string> weakTopics, AgeGroupEnum ageGroup, LevelEnum level);
 
-        Task<string?> GenerateDailyTipAsync( string category);
-
+        Task<string?> GenerateDailyTipAsync(string category, string lang);
         Task<AiChallengeDto?> GenerateChallengeAsync();
-
+        Task<string?> GenerateChallengeFeedbackAsync(
+            string title,
+            string description,
+            bool isCorrect);
     }
 }

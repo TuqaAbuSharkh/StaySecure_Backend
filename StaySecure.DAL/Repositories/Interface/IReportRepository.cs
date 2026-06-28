@@ -18,9 +18,10 @@ namespace StaySecure.DAL.Repositories.Interface
         Task<double> GetOverallAwarenessAsync();
         Task<string> GetStrongestAgeGroupAsync();
         Task<List<AgeGroupPerformanceResponse>>GetAgeGroupPerformanceAsync();
-        Task<UserDailyTip?> GetTodayTipAsync(string userId);
-
+        Task<UserDailyTip?> GetTodayTipAsync(string userId, string lang);
         Task AddDailyTipAsync(UserDailyTip tip);
+
+        Task<HomeStatisticsResponse> GetHomeStatisticsAsync();
 
     }
 }

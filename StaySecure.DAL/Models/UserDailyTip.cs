@@ -16,6 +16,7 @@ namespace StaySecure.DAL.Models
         public string Category { get; set; }
 
         public string Tip { get; set; }
+        public string Language { get; set; }
 
         public DateTime GeneratedDate { get; set; }
     }

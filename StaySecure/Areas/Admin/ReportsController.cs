@@ -18,7 +18,7 @@ namespace StaySecure.PL.Areas.Admin
             _reportService = reportService;
         }
 
-      
+       
 
         [HttpGet("awareness")]
         public async Task<IActionResult>GetAwarenessReport()

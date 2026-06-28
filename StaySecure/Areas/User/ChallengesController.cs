@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using StaySecure.BLL.Services.IServices;
+using StaySecure.DAL.DTOs.Request;
 using System.Security.Claims;
 
 namespace StaySecure.PL.Areas.User
@@ -64,5 +65,27 @@ namespace StaySecure.PL.Areas.User
             }
         }
 
+
+
+        [HttpPost("submit")]
+        public async Task<IActionResult> SubmitChallenge(
+    [FromBody] ChallengeSubmitRequest request)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+
+                var result = await _challengeService.SubmitChallengeAsync(userId, request);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.ToString());
+            }
+        }
     }
 }

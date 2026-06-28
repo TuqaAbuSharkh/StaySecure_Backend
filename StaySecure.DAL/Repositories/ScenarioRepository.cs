@@ -71,18 +71,20 @@ namespace StaySecure.DAL.Repositories
         }
 
         public async Task<Scenario?> GetNextScenarioAsync(
-    AgeGroupEnum ageGroup,
-    LevelEnum level,
-    List<int> completedScenarioIds)
+        AgeGroupEnum ageGroup,
+        LevelEnum level,
+        List<int> completedScenarioIds)
         {
             return await _context.Scenarios
-         .Include(x => x.Translations)
-         .Include(x => x.Options)
-             .ThenInclude(x => x.Translations)
-         .FirstOrDefaultAsync(x =>
-             x.AgeGroup == ageGroup &&
-             x.Level == level &&
-             !completedScenarioIds.Contains(x.Id));
+                .Include(x => x.Translations)
+                .Include(x => x.Options)
+                    .ThenInclude(x => x.Translations)
+                .Where(x =>
+                    x.AgeGroup == ageGroup &&
+                    x.Level == level &&
+                    !completedScenarioIds.Contains(x.Id))
+                .OrderBy(x => x.Id)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<ScenarioOption?> GetOptionByIdAsync(int optionId)
@@ -195,6 +197,16 @@ namespace StaySecure.DAL.Repositories
                 .CountAsync();
         }
 
+
+        public async Task<UserScenario?> GetUserScenarioAsync(
+    string userId,
+    int scenarioId)
+        {
+            return await _context.UserScenarios
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId &&
+                    x.ScenarioId == scenarioId);
+        }
 
     }
 }
